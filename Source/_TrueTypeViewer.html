@@ -1,0 +1,60 @@
+<html>
+<body>
+
+<div id="divUI">
+	<p><b>TrueType Font Viewer</b></p>
+	<p>Specify a valid .ttf file to view its contents:</p>
+	<input id="inputFileToLoad" type="file" onchange="inputFileToLoad_Changed();" />
+</div>
+
+<script type="text/javascript">
+
+// ui event handlers
+
+function inputFileToLoad_Changed(event)
+{
+	var inputFileToLoad = document.getElementById("inputFileToLoad");
+	var fileToLoad = inputFileToLoad.files[0];
+	FileHelper.readBytesFromFile(fileToLoad, inputFileToLoad_Changed_FileLoaded)
+}
+
+
+function inputFileToLoad_Changed_FileLoaded(fileAsBytes)
+{
+	var fontName = "todo";
+	var fontTrueType = new FontTrueType(fontName).fromBytes(fileAsBytes);
+	var numberOfGlyphs = fontTrueType.maximumProfile.numberOfGlyphs;
+	var fontHeightInPixels = 32;
+	var glyphsPerRow = 20;
+	var glyphRows = Math.ceil(numberOfGlyphs / glyphsPerRow);
+	var displaySize = new Coords(glyphsPerRow, glyphRows).multiplyScalar
+	(
+		fontHeightInPixels
+	);
+	var display = new Display(displaySize);
+	display.initialize();
+	fontTrueType.drawToDisplay(display, fontHeightInPixels);
+}
+
+</script>
+
+<script type="text/javascript" src="ByteStreamBigEndian.js"></script>
+<script type="text/javascript" src="Coords.js"></script>
+<script type="text/javascript" src="Display.js"></script>
+<script type="text/javascript" src="FileHelper.js"></script>
+<script type="text/javascript" src="FontTrueType.js"></script>
+<script type="text/javascript" src="FontTrueTypeCmapEncodingTable.js"></script>
+<script type="text/javascript" src="FontTrueTypeHeaderTable.js"></script>
+<script type="text/javascript" src="FontTrueTypeLocationTable.js"></script>
+<script type="text/javascript" src="FontTrueTypeMaximumProfile.js"></script>
+<script type="text/javascript" src="FontTrueTypeGlyph.js"></script>
+<script type="text/javascript" src="FontTrueTypeGlyphComposite.js"></script>
+<script type="text/javascript" src="FontTrueTypeGlyphCompositeFlags.js"></script>
+<script type="text/javascript" src="FontTrueTypeGlyphContour.js"></script>
+<script type="text/javascript" src="FontTrueTypeGlyphContourFlags.js"></script>
+<script type="text/javascript" src="FontTrueTypeGlyphContourPoint.js"></script>
+<script type="text/javascript" src="FontTrueTypeGlyphContourSegment.js"></script>
+<script type="text/javascript" src="FontTrueTypeTableDefn.js"></script>
+
+</body>
+</html>
