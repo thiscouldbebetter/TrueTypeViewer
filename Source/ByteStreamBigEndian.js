@@ -3,7 +3,7 @@
 
 function ByteStreamBigEndian(bytes)
 {
-	this.bytes = bytes;  
+	this.bytes = bytes;
 
 	this.numberOfBytesTotal = this.bytes.length;
 	this.byteIndexCurrent = 0;
@@ -16,7 +16,7 @@ function ByteStreamBigEndian(bytes)
 		{
 			this.readByte();
 		}
-	}
+	};
 
 	ByteStreamBigEndian.prototype.align32Bit = function()
 	{
@@ -24,12 +24,12 @@ function ByteStreamBigEndian(bytes)
 		{
 			this.readByte();
 		}
-	}
+	};
 
 	ByteStreamBigEndian.prototype.hasMoreBytes = function()
 	{
 		return (this.byteIndexCurrent < this.numberOfBytesTotal);
-	}
+	};
 
 	ByteStreamBigEndian.prototype.peekBytes = function(numberOfBytesToRead)
 	{
@@ -41,7 +41,7 @@ function ByteStreamBigEndian(bytes)
 		}
 
 		return returnValue;
-	}
+	};
 
 	ByteStreamBigEndian.prototype.readBytes = function(numberOfBytesToRead)
 	{
@@ -53,7 +53,7 @@ function ByteStreamBigEndian(bytes)
 		}
 
 		return returnValue;
-	}
+	};
 
 	ByteStreamBigEndian.prototype.readByte = function()
 	{
@@ -62,12 +62,12 @@ function ByteStreamBigEndian(bytes)
 		this.byteIndexCurrent++;
 
 		return returnValue;
-	}
+	};
 
 	ByteStreamBigEndian.prototype.readByteSigned = function()
 	{
 		var returnValue = this.readByte();
-	
+
 		var maxValue = 128; // hack
 		if (returnValue >= maxValue)
 		{
@@ -75,20 +75,19 @@ function ByteStreamBigEndian(bytes)
 		}
 
 		return returnValue;
-	}
+	};
 
 	ByteStreamBigEndian.prototype.readFixedPoint16_16 = function()
 	{
 		var valueIntegral = this.readShort();
 		var valueFractional = this.readShort();
-		
+
 		var valueAsString = "" + valueIntegral + "." + valueFractional;
-	
+
 		var returnValue = parseFloat(valueAsString);
 
 		return returnValue;
-	}
-
+	};
 
 	ByteStreamBigEndian.prototype.readInt = function()
 	{
@@ -101,7 +100,7 @@ function ByteStreamBigEndian(bytes)
 		);
 
 		return returnValue;
-	}
+	};
 
 	ByteStreamBigEndian.prototype.readShort = function()
 	{
@@ -112,7 +111,7 @@ function ByteStreamBigEndian(bytes)
 		);
 
 		return returnValue;
-	}
+	};
 
 	ByteStreamBigEndian.prototype.readShortSigned = function()
 	{
@@ -129,7 +128,7 @@ function ByteStreamBigEndian(bytes)
 		}
 
 		return returnValue;
-	}
+	};
 
 	ByteStreamBigEndian.prototype.readString = function(numberOfBytesToRead)
 	{
@@ -142,5 +141,5 @@ function ByteStreamBigEndian(bytes)
 		}
 
 		return returnValue;
-	}
+	};
 }

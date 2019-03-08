@@ -6,7 +6,6 @@ function FontTrueTypeGlyphComposite(font, childGlyphIndices, offsetInBytes)
 	this.childGlyphIndices = childGlyphIndices;
 	this.offsetInBytes = offsetInBytes;
 }
-
 {
 	FontTrueTypeGlyphComposite.prototype.childGlyphs = function()
 	{
@@ -23,7 +22,7 @@ function FontTrueTypeGlyphComposite(font, childGlyphIndices, offsetInBytes)
 			returnValues.push(childGlyph);
 		}
 		return returnValues;
-	}
+	};
 
 	FontTrueTypeGlyphComposite.prototype.drawToDisplay = function(display, fontHeightInPixels, drawOffset)
 	{
@@ -33,8 +32,8 @@ function FontTrueTypeGlyphComposite(font, childGlyphIndices, offsetInBytes)
 			var child = childGlyphs[i];
 			if (child != null) // hack
 			{
-				child.drawToDisplay(display, fontHeightInPixels, drawOffset);	
+				child.drawToDisplay(display, fontHeightInPixels, drawOffset);
 			}
 		}
-	}
+	};
 }

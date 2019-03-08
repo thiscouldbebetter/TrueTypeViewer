@@ -7,8 +7,8 @@ function FontTrueTypeCmapEncodingTable
 )
 {
 	this.platformID = platformID;
-	this.encodingID = encodingID; 
+	this.encodingID = encodingID;
 	this.offsetInBytes = offsetInBytes;
 
-	// Unicode BMP for Windows : PlatformID = 3, EncodingID = 1 
+	// Unicode BMP for Windows : PlatformID = 3, EncodingID = 1
 }

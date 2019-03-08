@@ -1,7 +1,7 @@
 
 function Display(sizeInPixels)
 {
-	this.sizeInPixels = sizeInPixels;	
+	this.sizeInPixels = sizeInPixels;
 }
 
 {
@@ -13,7 +13,7 @@ function Display(sizeInPixels)
 		this.graphics = canvas.getContext("2d");
 		this.graphics.strokeStyle = "Gray";
 		document.body.appendChild(canvas);
-	}
+	};
 
 	// drawing
 
@@ -30,7 +30,7 @@ function Display(sizeInPixels)
 			curveControlPos.x, curveControlPos.y, toPos.x, toPos.y
 		);
 		this.graphics.stroke();
-	}
+	};
 
 	Display.prototype.drawLine = function(fromPos, toPos, color)
 	{
@@ -42,7 +42,7 @@ function Display(sizeInPixels)
 		this.graphics.moveTo(fromPos.x, fromPos.y);
 		this.graphics.lineTo(toPos.x, toPos.y);
 		this.graphics.stroke();
-	}
+	};
 
 	Display.prototype.drawRectangle = function(pos, size, color)
 	{
@@ -51,5 +51,5 @@ function Display(sizeInPixels)
 			this.graphics.strokeStyle = color;
 		}
 		this.graphics.strokeRect(pos.x, pos.y, size.x, size.y);
-	}
+	};
 }

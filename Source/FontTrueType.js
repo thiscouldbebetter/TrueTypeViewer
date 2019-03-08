@@ -13,7 +13,7 @@ function FontTrueType(name)
 		var numberOfGlyphs = this.glyphs.length;
 		var glyphRows = Math.ceil(numberOfGlyphs / glyphsPerRow);
 
-		var drawPos = new Coords(0, 0);		
+		var drawPos = new Coords(0, 0);
 
 		for (var g = 0; g < this.glyphs.length; g++)
 		{
@@ -24,17 +24,17 @@ function FontTrueType(name)
 			drawPos.multiplyScalar(fontHeightInPixels);
 
 			glyph.drawToDisplay(display, fontHeightInPixels, drawPos);
-		}		
-	}
+		}
+	};
 
 	// file
 
 	FontTrueType.prototype.fromBytes = function(bytesFromFile)
-	{	
+	{
 		var reader = new ByteStreamBigEndian(bytesFromFile);
 		this.fromBytes_ReadTables(reader);
 		return this;
-	}
+	};
 
 	FontTrueType.prototype.fromBytes_ReadTables = function(reader)
 	{
@@ -56,7 +56,7 @@ function FontTrueType(name)
 			var checkSum = reader.readInt();
 			var offsetInBytes = reader.readInt();
 			var length = reader.readInt();
-			
+
 			var tableDefn = new FontTrueTypeTableDefn
 			(
 				tableTypeTag,
@@ -73,7 +73,7 @@ function FontTrueType(name)
 		// but because some depend on others,
 		// they cannot be processed in that order.
 
-		var tableNamesOrderedLogically = 
+		var tableNamesOrderedLogically =
 		[
 			"head",
 			"cmap",
@@ -85,10 +85,10 @@ function FontTrueType(name)
 		for (var t = 0; t < tableNamesOrderedLogically.length; t++)
 		{
 			var tableName = tableNamesOrderedLogically[t];
-			var tableDefn = tableDefns[tableName]; 
+			var tableDefn = tableDefns[tableName];
 			reader.byteIndexCurrent = tableDefn.offsetInBytes;
 
-			var tableTypeTag = tableDefn.tableTypeTag;			
+			var tableTypeTag = tableDefn.tableTypeTag;
 			if (tableTypeTag == "cmap")
 			{
 				this.encodingTables = this.fromBytes_ReadTables_Cmap
@@ -129,7 +129,7 @@ function FontTrueType(name)
 				console.log("Skipping table: " + tableTypeTag);
 			}
 		}
-	}
+	};
 
 	FontTrueType.prototype.fromBytes_ReadTables_Cmap = function(reader, length)
 	{
@@ -155,17 +155,17 @@ function FontTrueType(name)
 
 			encodingTables.push(encodingTable);
 		}
-		
+
 		for (var e = 0; e < numberOfEncodingTables; e++)
 		{
 			var encodingTable = encodingTables[e];
 
-			reader.byteIndexCurrent = 
-				readerByteOffsetOriginal 
+			reader.byteIndexCurrent =
+				readerByteOffsetOriginal
 				+ encodingTable.offsetInBytes;
 
 			var formatCode = reader.readShort();
-			if (formatCode == 0) 
+			if (formatCode == 0)
 			{
 				// "Apple standard"
 				var lengthInBytes = reader.readShort();
@@ -176,7 +176,7 @@ function FontTrueType(name)
 					numberOfMappings
 				);
 			}
-			else if (formatCode == 2) 
+			else if (formatCode == 2)
 			{
 				// "high-byte mapping through table"
 				// "useful for... Japanese, Chinese, and Korean"
@@ -222,7 +222,7 @@ function FontTrueType(name)
 					break; // todo
 				}
 			}
-			else if (formatCode == 6) 
+			else if (formatCode == 6)
 			{
 				// "Trimmed table mapping"
 				throw "Unsupported cmap format code."
@@ -236,7 +236,7 @@ function FontTrueType(name)
 		reader.byteIndexCurrent = readerByteOffsetOriginal;
 
 		return encodingTables;
-	}
+	};
 
 	FontTrueType.prototype.fromBytes_ReadTables_Glyf = function(reader, length)
 	{
@@ -245,8 +245,9 @@ function FontTrueType(name)
 		var byteIndexOfTable = reader.byteIndexCurrent;
 		var bytesForContoursMinMax = 10;
 		var glyphOffsetBase = byteIndexOfTable + bytesForContoursMinMax;
+		var byteIndexOfTableEnd = byteIndexOfTable + length;
 
-		while (reader.byteIndexCurrent < byteIndexOfTable + length)
+		while (reader.byteIndexCurrent < byteIndexOfTableEnd)
 		{
 			// header
 			var numberOfContours = reader.readShortSigned();
@@ -267,9 +268,9 @@ function FontTrueType(name)
 			{
 				glyph = this.fromBytes_ReadTables_Glyf_Simple
 				(
-					reader, 
-					numberOfContours, 
-					minAndMax, 
+					reader,
+					numberOfContours,
+					minAndMax,
 					glyphOffsetBase
 				);
 			}
@@ -277,7 +278,7 @@ function FontTrueType(name)
 			{
 				glyph = this.fromBytes_ReadTables_Glyf_Composite
 				(
-					reader, 
+					reader,
 					glyphOffsetBase
 				);
 			}
@@ -288,7 +289,7 @@ function FontTrueType(name)
 		}
 
 		// hack
-		// This is terrible, but then again, 
+		// This is terrible, but then again,
 		// so is indexing glyphs by their byte offsets.
 		for (var i = 0; i < glyphs.length; i++)
 		{
@@ -299,7 +300,7 @@ function FontTrueType(name)
 		}
 
 		return glyphs;
-	}
+	};
 
 	FontTrueType.prototype.fromBytes_ReadTables_Glyf_Simple = function(reader, numberOfContours, minAndMax, byteIndexOfTable)
 	{
@@ -318,8 +319,8 @@ function FontTrueType(name)
 			totalLengthOfInstructionsInBytes
 		);
 
-		var numberOfPoints = 
-			endPointsOfContours[endPointsOfContours.length - 1] 
+		var numberOfPoints =
+			endPointsOfContours[endPointsOfContours.length - 1]
 			+ 1;
 
 		var flagSets = [];
@@ -330,10 +331,10 @@ function FontTrueType(name)
 
 			var flags = FontTrueTypeGlyphContourFlags.fromByte(flagsAsByte);
 
-			flags.timesToRepeat  = (flags.timesToRepeat == true ? reader.readByte() : 0);	
+			flags.timesToRepeat  = (flags.timesToRepeat == true ? reader.readByte() : 0);
 
 			numberOfPointsSoFar += (1 + flags.timesToRepeat);
-					
+
 			flagSets.push(flags);
 		}
 
@@ -341,10 +342,10 @@ function FontTrueType(name)
 
 		var xPrev = 0;
 		for (var f = 0; f < flagSets.length; f++)
-		{		
+		{
 			var flags = flagSets[f];
 			for (var r = 0; r <= flags.timesToRepeat; r++)
-			{		
+			{
 				var x;
 				if (flags.xShortVector == true)
 				{
@@ -354,7 +355,7 @@ function FontTrueType(name)
 					x += xPrev;
 				}
 				else
-				{	
+				{
 					if (flags.xIsSame == true)
 					{
 						x = xPrev;
@@ -390,7 +391,7 @@ function FontTrueType(name)
 					y += yPrev;
 				}
 				else
-				{	
+				{
 					if (flags.yIsSame == true)
 					{
 						y = yPrev;
@@ -416,13 +417,13 @@ function FontTrueType(name)
 			minAndMax,
 			endPointsOfContours,
 			instructionsAsBytes,
-			flagSets, 
+			flagSets,
 			coordinates,
 			offsetInBytes
 		);
 
 		return glyph;
-	}
+	};
 
 	FontTrueType.prototype.fromBytes_ReadTables_Glyf_Composite = function(reader, byteIndexOfTable)
 	{
@@ -436,23 +437,25 @@ function FontTrueType(name)
 
 		while (true)
 		{
+			// See:
+			// https://docs.microsoft.com/en-us/typography/opentype/spec/glyf
+
 			var flagsAsShort = reader.readShort();
 			flags = FontTrueTypeGlyphCompositeFlags.fromShort(flagsAsShort);
 			flagSets.push(flags);
 
 			var childGlyphIndex = reader.readShort();
-			// childGlyphIndex -= 3; // hack
 			childGlyphIndices.push(childGlyphIndex);
 
 			var argument1 = (flags.areArgs1And2Words? reader.readShort() : reader.readByte());
 			var argument2 = (flags.areArgs1And2Words? reader.readShort() : reader.readByte());
-	
-			if (flags.isThereASimpleScale == true)
+
+			if (flags.isThereASimpleScale)
 			{
 				var scaleFactor = reader.readShort();
 				var scale = new Coords(scaleFactor, scaleFactor);
 			}
-			else if (flags.isXScaleDifferentFromYScale == true)
+			else if (flags.areXAndYScalesDifferent)
 			{
 				var scale = new Coords
 				(
@@ -460,13 +463,17 @@ function FontTrueType(name)
 					reader.readShort()
 				);
 			}
-			else if (flags.use2By2Transform == true)
+			else if (flags.use2By2Transform)
 			{
 				// ???
 				var scaleX = reader.readShort();
 				var scale01 = reader.readShort();
 				var scale02 = reader.readShort();
 				var scaleY = reader.readShort();
+			}
+			else
+			{
+				var scale = new Coords(1.0, 1.0);
 			}
 
 			if (flags.areThereMoreComponentGlyphs == false)
@@ -487,7 +494,7 @@ function FontTrueType(name)
 		);
 
 		return glyphComposite;
-	}
+	};
 
 	FontTrueType.prototype.fromBytes_ReadTables_Head = function(reader, length)
 	{
@@ -496,7 +503,7 @@ function FontTrueType(name)
 		var checkSumAdjustment = reader.readInt(); // "To compute:  set it to 0, sum the entire font as ULONG, then store 0xB1B0AFBA - sum."
 		var magicNumber	= reader.readInt(); // 0x5F0F3CF5
 
-		var flags = reader.readShort(); 
+		var flags = reader.readShort();
 		// "Bit 0 - baseline for font at y=0;"
 		// "Bit 1 - left sidebearing at x=0;"
 		// "Bit 2 - instructions may depend on point size;"
@@ -511,13 +518,13 @@ function FontTrueType(name)
 		var yMin = reader.readShortSigned();
 		var xMax = reader.readShortSigned();
 		var yMax = reader.readShortSigned();
-		
-		var macStyle = reader.readShort(); 
+
+		var macStyle = reader.readShort();
 		// Bit 0 bold (if set to 1); Bit 1 italic (if set to 1)
 		// Bits 2-15 reserved (set to 0).
 
 		var lowestRecPPEM = reader.readShortSigned(); // "Smallest readable size in pixels."
-		
+
 		var fontDirectionHint = reader.readShortSigned();
 		// 0   Fully mixed directional glyphs;
 		// 1   Only strongly left to right;
@@ -525,13 +532,32 @@ function FontTrueType(name)
 		//-1   Only strongly right to left;
 		//-2   Like -1 but also contains neutrals.
 
+		var indexToLocFormat = reader.readShort(); // 0 for short offsets, 1 long
+		var glyphDataFormat = reader.readShort(); // "0 for current format"
+
 		var returnValue = new FontTrueTypeHeaderTable
 		(
-			// todo
+			tableVersion,
+			fontRevision,
+			checkSumAdjustment,
+			magicNumber,
+			flags,
+			unitsPerEm,
+			timeCreated,
+			timeModified,
+			xMin,
+			yMin,
+			xMax,
+			yMax,
+			macStyle,
+			lowestRecPPEM,
+			fontDirectionHint,
+			indexToLocFormat,
+			glyphDataFormat
 		);
 
 		return returnValue;
-	}
+	};
 
 	FontTrueType.prototype.fromBytes_ReadTables_Loca = function(reader, length)
 	{
@@ -556,7 +582,7 @@ function FontTrueType(name)
 				var offset = valueRead * 2;
 				offsets.push(offset);
 			}
-		}	
+		}
 		else
 		{
 			for (var i = 0; i < numberOfGlyphsPlusOne; i++)
@@ -572,7 +598,7 @@ function FontTrueType(name)
 		var returnValue = new FontTrueTypeLocationTable(offsets);
 
 		return returnValue;
-	}
+	};
 
 	FontTrueType.prototype.fromBytes_ReadTables_Maxp = function(reader, length)
 	{
@@ -594,5 +620,5 @@ function FontTrueType(name)
 		var returnValue = new FontTrueTypeMaximumProfile(numberOfGlyphs);
 
 		return returnValue;
-	}
+	};
 }

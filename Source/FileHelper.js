@@ -15,5 +15,5 @@ function FileHelper()
 		}
 
 		fileReader.readAsBinaryString(file);
-	}
+	};
 }

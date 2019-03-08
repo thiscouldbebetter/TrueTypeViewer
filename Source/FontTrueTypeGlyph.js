@@ -2,9 +2,9 @@
 function FontTrueTypeGlyph
 (
 	minAndMax,
-	endPointsOfContours, 
-	instructionsAsBytes, 
-	flagSets, 
+	endPointsOfContours,
+	instructionsAsBytes,
+	flagSets,
 	coordinates,
 	offsetInBytes
 )
@@ -19,7 +19,7 @@ function FontTrueTypeGlyph
 
 {
 	// constants
-	
+
 	FontTrueTypeGlyph.PointsPerInch = 72;
 	FontTrueTypeGlyph.DimensionInFUnits = 2048;
 
@@ -28,7 +28,7 @@ function FontTrueTypeGlyph
 	FontTrueTypeGlyph.prototype.drawToDisplay = function(display, fontHeightInPixels, drawOffset)
 	{
 		// todo
-		var offsetForBaseLines = new Coords(.2, .2).multiplyScalar(fontHeightInPixels); 
+		var offsetForBaseLines = new Coords(.2, .2).multiplyScalar(fontHeightInPixels);
 
 		this.drawToDisplay_Background
 		(
@@ -48,7 +48,7 @@ function FontTrueTypeGlyph
 		);
 
 		this.drawToDisplay_ContoursDraw(display, contours, drawOffset);
-	}
+	};
 
 	FontTrueTypeGlyph.prototype.drawToDisplay_Background = function
 	(
@@ -57,13 +57,13 @@ function FontTrueTypeGlyph
 	{
 		display.drawRectangle
 		(
-			drawOffset, 
+			drawOffset,
 			new Coords(1, 1).multiplyScalar(fontHeightInPixels)
 		);
 
 		display.drawLine
 		(
-			new Coords(baseLineOffset.x, 0).add(drawOffset), 
+			new Coords(baseLineOffset.x, 0).add(drawOffset),
 			new Coords(baseLineOffset.x, fontHeightInPixels).add(drawOffset)
 		);
 
@@ -72,14 +72,14 @@ function FontTrueTypeGlyph
 			new Coords(0, fontHeightInPixels - baseLineOffset.y).add(drawOffset),
 			new Coords(fontHeightInPixels, fontHeightInPixels - baseLineOffset.y).add(drawOffset)
 		)
-	}
+	};
 
 	FontTrueTypeGlyph.prototype.drawToDisplay_ContourPointSetsBuild = function
 	(
 		fUnitsPerPixel, offsetForBaseLines, fontHeightInPixels
 	)
 	{
-		// Convert the flags and coordinates 
+		// Convert the flags and coordinates
 		// into sets of points on the contours of the glyph.
 
 		var contourPointSets = [];
@@ -116,7 +116,7 @@ function FontTrueTypeGlyph
 					offsetForBaseLines
 				);
 
-				coordinateInPixels.y = 
+				coordinateInPixels.y =
 					fontHeightInPixels - coordinateInPixels.y;
 
 				var contourPoint = new FontTrueTypeGlyphContourPoint
@@ -134,22 +134,22 @@ function FontTrueTypeGlyph
 					contourIndex++;
 					if (contourIndex < numberOfContours)
 					{
-						endPointOfContourCurrent = 
+						endPointOfContourCurrent =
 							this.endPointsOfContours[contourIndex];
 					}
 				}
 
 				coordinateIndex++;
-			}		
+			}
 		}
 
 		return contourPointSets;
-	}
+	};
 
 	FontTrueTypeGlyph.prototype.drawToDisplay_ContoursBuild = function(contourPointSets)
-	{	
+	{
 		// Convert sets of points on the contours of the glyph
-		// into sets of line segments and/or curves, 
+		// into sets of line segments and/or curves,
 		// and build contours from those sets of segments and curves.
 
 		var contours = [];
@@ -165,7 +165,7 @@ function FontTrueTypeGlyph
 				if (pNext >= contourPoints.length)
 				{
 					pNext = 0;
-				} 
+				}
 
 				var contourPoint = contourPoints[p];
 				var contourPointNext = contourPoints[pNext];
@@ -185,12 +185,12 @@ function FontTrueTypeGlyph
 					{
 						var segment = new FontTrueTypeGlyphContourSegment
 						(
-							contourPoint.position, 
+							contourPoint.position,
 							contourPointNext.position
 						);
 
 						contourSegments.push(segment);
-					}					
+					}
 				}
 				else // if (contourPoint.isOnCurve == false)
 				{
@@ -217,11 +217,11 @@ function FontTrueTypeGlyph
 			}
 
 			var contour = new FontTrueTypeGlyphContour(contourSegments);
-			contours.push(contour);	
+			contours.push(contour);
 		}
 
 		return contours;
-	}
+	};
 
 	FontTrueTypeGlyph.prototype.drawToDisplay_ContoursDraw = function(display, contours, drawOffset)
 	{
@@ -231,7 +231,7 @@ function FontTrueTypeGlyph
 		{
 			var contour = contours[c];
 			var contourSegments = contour.segments;
-		
+
 			for (var s = 0; s < contourSegments.length; s++)
 			{
 				var sNext = s + 1;
@@ -260,11 +260,11 @@ function FontTrueTypeGlyph
 					display.drawCurve
 					(
 						startPoint,
-						curveControlPoint.clone().add(drawOffset), 
-						endPoint, 
+						curveControlPoint.clone().add(drawOffset),
+						endPoint
 					);
 				}
-			} 
+			}
 		}
-	}
+	};
 }

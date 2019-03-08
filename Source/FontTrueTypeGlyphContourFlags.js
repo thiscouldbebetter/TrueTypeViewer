@@ -1,9 +1,9 @@
 
 function FontTrueTypeGlyphContourFlags
 (
-	onCurve, 
-	xShortVector, 
-	yShortVector, 
+	onCurve,
+	xShortVector,
+	yShortVector,
 	timesToRepeat,
 	xIsSame,
 	yIsSame
@@ -11,7 +11,7 @@ function FontTrueTypeGlyphContourFlags
 {
 	this.onCurve = onCurve;
 	this.xShortVector = xShortVector;
-	this.yShortVector = yShortVector;	
+	this.yShortVector = yShortVector;
 	this.timesToRepeat = timesToRepeat;
 	this.xIsSame = xIsSame;
 	this.yIsSame = yIsSame;
@@ -26,7 +26,7 @@ function FontTrueTypeGlyphContourFlags
 	// 4 - if xShortVector is 0, and this flag is 0, x coord is a delta vector
 	// 5 - same as 4, but for y instead of x
 	// 6 - reserved
-	// 7 - reserved	
+	// 7 - reserved
 }
 
 {
@@ -39,9 +39,9 @@ function FontTrueTypeGlyphContourFlags
 			((flagsAsByte >> 2 & 1) > 0),
 			((flagsAsByte >> 3 & 1) > 0),
 			((flagsAsByte >> 4 & 1) > 0),
-			((flagsAsByte >> 5 & 1) > 0)		
+			((flagsAsByte >> 5 & 1) > 0)
 		);
 
 		return returnValue;
-	}
+	};
 }

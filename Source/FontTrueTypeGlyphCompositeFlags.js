@@ -10,7 +10,10 @@ function FontTrueTypeGlyphCompositeFlags
 	areXAndYScalesDifferent,
 	use2By2Transform,
 	areThereInstructions,
-	useMyMetrics
+	useMyMetrics,
+	doComponentGlyphsOverlap,
+	isComponentOffsetScaled,
+	isComponentOffsetUnscaled
 )
 {
 	this.areArgs1And2Words = areArgs1And2Words;
@@ -23,6 +26,9 @@ function FontTrueTypeGlyphCompositeFlags
 	this.use2By2Transform = use2By2Transform;
 	this.areThereInstructions = areThereInstructions,
 	this.useMyMetrics = useMyMetrics;
+	this.doComponentGlyphsOverlap = doComponentGlyphsOverlap;
+	this.isComponentOffsetScaled = isComponentOffsetScaled;
+	this.isComponentOffsetUnscaled = isComponentOffsetUnscaled;
 }
 
 {
@@ -36,12 +42,15 @@ function FontTrueTypeGlyphCompositeFlags
 			((flagsAsShort >> 3 & 1) > 0),
 			((flagsAsShort >> 4 & 1) > 0),
 			((flagsAsShort >> 5 & 1) > 0),
-			((flagsAsShort >> 6 & 1) > 0),		
+			((flagsAsShort >> 6 & 1) > 0),
 			((flagsAsShort >> 7 & 1) > 0),
 			((flagsAsShort >> 8 & 1) > 0),
-			((flagsAsShort >> 9 & 1) > 0)
+			((flagsAsShort >> 9 & 1) > 0),
+			((flagsAsShort >> 10 & 1) > 0),
+			((flagsAsShort >> 11 & 1) > 0),
+			((flagsAsShort >> 12 & 1) > 0),
 		);
 
-		return returnValue;		
-	}
+		return returnValue;
+	};
 }
