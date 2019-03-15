@@ -25,16 +25,8 @@ function FontTrueTypeGlyph
 
 	// methods
 
-	FontTrueTypeGlyph.prototype.drawToDisplay = function(display, fontHeightInPixels, drawOffset)
+	FontTrueTypeGlyph.prototype.drawToDisplay = function(display, fontHeightInPixels, font, offsetForBaseLines, drawOffset)
 	{
-		// todo
-		var offsetForBaseLines = new Coords(.2, .2).multiplyScalar(fontHeightInPixels);
-
-		this.drawToDisplay_Background
-		(
-			display, fontHeightInPixels, offsetForBaseLines, drawOffset
-		);
-
 		var fUnitsPerPixel = FontTrueTypeGlyph.DimensionInFUnits / fontHeightInPixels;
 
 		var contourPointSets = this.drawToDisplay_ContourPointSetsBuild
@@ -48,30 +40,6 @@ function FontTrueTypeGlyph
 		);
 
 		this.drawToDisplay_ContoursDraw(display, contours, drawOffset);
-	};
-
-	FontTrueTypeGlyph.prototype.drawToDisplay_Background = function
-	(
-		display, fontHeightInPixels, baseLineOffset, drawOffset
-	)
-	{
-		display.drawRectangle
-		(
-			drawOffset,
-			new Coords(1, 1).multiplyScalar(fontHeightInPixels)
-		);
-
-		display.drawLine
-		(
-			new Coords(baseLineOffset.x, 0).add(drawOffset),
-			new Coords(baseLineOffset.x, fontHeightInPixels).add(drawOffset)
-		);
-
-		display.drawLine
-		(
-			new Coords(0, fontHeightInPixels - baseLineOffset.y).add(drawOffset),
-			new Coords(fontHeightInPixels, fontHeightInPixels - baseLineOffset.y).add(drawOffset)
-		)
 	};
 
 	FontTrueTypeGlyph.prototype.drawToDisplay_ContourPointSetsBuild = function
@@ -266,5 +234,125 @@ function FontTrueTypeGlyph
 				}
 			}
 		}
+	};
+
+	// file
+
+	FontTrueTypeGlyph.prototype.fromByteStream = function(reader, numberOfContours, minAndMax, offsetInBytes)
+	{
+		var endPointsOfContours = [];
+		for (var c = 0; c < numberOfContours; c++)
+		{
+			var endPointOfContour = reader.readShort();
+			endPointsOfContours.push(endPointOfContour);
+		}
+
+		var totalLengthOfInstructionsInBytes = reader.readShort();
+		var instructionsAsBytes = reader.readBytes
+		(
+			totalLengthOfInstructionsInBytes
+		);
+
+		var numberOfPoints =
+			endPointsOfContours[endPointsOfContours.length - 1]
+			+ 1;
+
+		var flagSets = [];
+		var numberOfPointsSoFar = 0;
+		while (numberOfPointsSoFar < numberOfPoints)
+		{
+			var flagsAsByte = reader.readByte();
+
+			var flags = FontTrueTypeGlyphContourFlags.fromByte(flagsAsByte);
+
+			flags.timesToRepeat  = (flags.timesToRepeat == true ? reader.readByte() : 0);
+
+			numberOfPointsSoFar += (1 + flags.timesToRepeat);
+
+			flagSets.push(flags);
+		}
+
+		var coordinates = [];
+
+		var xPrev = 0;
+		for (var f = 0; f < flagSets.length; f++)
+		{
+			var flags = flagSets[f];
+			for (var r = 0; r <= flags.timesToRepeat; r++)
+			{
+				var x;
+				if (flags.xShortVector == true)
+				{
+					x = reader.readByte();
+					var sign = (flags.xIsSame ? 1 : -1);
+					x *= sign;
+					x += xPrev;
+				}
+				else
+				{
+					if (flags.xIsSame == true)
+					{
+						x = xPrev;
+					}
+					else
+					{
+						x = reader.readShortSigned();
+						x += xPrev;
+					}
+				}
+
+				var coordinate = new Coords(x, 0);
+				coordinates.push(coordinate);
+				xPrev = x;
+			}
+		}
+
+		var yPrev = 0;
+		var coordinateIndex = 0;
+		for (var f = 0; f < flagSets.length; f++)
+		{
+			var flags = flagSets[f];
+			for (var r = 0; r <= flags.timesToRepeat; r++)
+			{
+				var coordinate = coordinates[coordinateIndex];
+
+				var y;
+				if (flags.yShortVector == true)
+				{
+					y = reader.readByte();
+					var sign = (flags.yIsSame ? 1 : -1);
+					y *= sign;
+					y += yPrev;
+				}
+				else
+				{
+					if (flags.yIsSame == true)
+					{
+						y = yPrev;
+					}
+					else
+					{
+						y = reader.readShortSigned();
+						y += yPrev;
+					}
+				}
+
+				coordinate.y = y;
+				yPrev = y;
+
+				coordinateIndex++;
+			}
+		}
+
+		reader.align16Bit();
+
+		this.minAndMax = minAndMax;
+		this.endPointsOfContours = endPointsOfContours;
+		this.instructionsAsBytes = instructionsAsBytes;
+		this.flagSets = flagSets;
+		this.coordinates = coordinates;
+		this.offsetInBytes = offsetInBytes;
+
+		return this;
 	};
 }

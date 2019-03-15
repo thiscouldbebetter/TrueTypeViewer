@@ -12,7 +12,9 @@ function Display(sizeInPixels)
 		canvas.height = this.sizeInPixels.y;
 		this.graphics = canvas.getContext("2d");
 		this.graphics.strokeStyle = "Gray";
-		document.body.appendChild(canvas);
+		var divOutput = document.getElementById("divOutput");
+		divOutput.innerHTML = "";
+		divOutput.appendChild(canvas);
 	};
 
 	// drawing

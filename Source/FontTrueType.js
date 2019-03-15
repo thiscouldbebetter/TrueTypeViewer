@@ -13,7 +13,8 @@ function FontTrueType(name)
 		var numberOfGlyphs = this.glyphs.length;
 		var glyphRows = Math.ceil(numberOfGlyphs / glyphsPerRow);
 
-		var drawPos = new Coords(0, 0);
+		var offsetForBaseLines = new Coords(.2, .2).multiplyScalar(fontHeightInPixels);
+		var drawPos = new Coords();
 
 		for (var g = 0; g < this.glyphs.length; g++)
 		{
@@ -23,8 +24,37 @@ function FontTrueType(name)
 			drawPos.y = Math.floor(g / glyphsPerRow);
 			drawPos.multiplyScalar(fontHeightInPixels);
 
-			glyph.drawToDisplay(display, fontHeightInPixels, drawPos);
+			this.drawToDisplay_GlyphBackground
+			(
+				display, fontHeightInPixels, offsetForBaseLines, drawPos
+			);
+
+			glyph.drawToDisplay(display, fontHeightInPixels, this, offsetForBaseLines, drawPos);
 		}
+	};
+
+	FontTrueType.prototype.drawToDisplay_GlyphBackground = function
+	(
+		display, fontHeightInPixels, baseLineOffset, drawOffset
+	)
+	{
+		display.drawRectangle
+		(
+			drawOffset,
+			new Coords(1, 1).multiplyScalar(fontHeightInPixels)
+		);
+
+		display.drawLine
+		(
+			new Coords(baseLineOffset.x, 0).add(drawOffset),
+			new Coords(baseLineOffset.x, fontHeightInPixels).add(drawOffset)
+		);
+
+		display.drawLine
+		(
+			new Coords(0, fontHeightInPixels - baseLineOffset.y).add(drawOffset),
+			new Coords(fontHeightInPixels, fontHeightInPixels - baseLineOffset.y).add(drawOffset)
+		)
 	};
 
 	// file
@@ -181,14 +211,14 @@ function FontTrueType(name)
 				// "high-byte mapping through table"
 				// "useful for... Japanese, Chinese, and Korean"
 				// "mixed 8/16-bit encoding"
-				throw "Unsupported cmap format code."
+				throw "Unsupported cmap format code: " + formatCode;
 			}
 			else if (formatCode == 4)
 			{
 				// "Microsoft standard"
 				// Not yet fully implemented.
 
-				console.log("Unsupported cmap format code.")
+				console.log("Unsupported cmap format code: " + formatCode);
 				continue;
 
 				var tableLengthInBytes = reader.readShort();
@@ -225,11 +255,11 @@ function FontTrueType(name)
 			else if (formatCode == 6)
 			{
 				// "Trimmed table mapping"
-				throw "Unsupported cmap format code."
+				throw "Unsupported cmap format code: " + formatCode;
 			}
 			else
 			{
-				throw "Unrecognized cmap format code: " + formatCode
+				throw "Unrecognized cmap format code: " + formatCode;
 			}
 		}
 
@@ -264,22 +294,23 @@ function FontTrueType(name)
 			var minAndMax = [min, max];
 
 			var glyph;
+			var offsetInBytes = reader.byteIndexCurrent - glyphOffsetBase;
 			if (numberOfContours >= 0)
 			{
-				glyph = this.fromBytes_ReadTables_Glyf_Simple
+				glyph = new FontTrueTypeGlyph().fromByteStream
 				(
 					reader,
 					numberOfContours,
 					minAndMax,
-					glyphOffsetBase
+					offsetInBytes
 				);
 			}
 			else
 			{
-				glyph = this.fromBytes_ReadTables_Glyf_Composite
+				glyph = new FontTrueTypeGlyphComposite().fromByteStreamAndOffset
 				(
 					reader,
-					glyphOffsetBase
+					offsetInBytes
 				);
 			}
 
@@ -300,200 +331,6 @@ function FontTrueType(name)
 		}
 
 		return glyphs;
-	};
-
-	FontTrueType.prototype.fromBytes_ReadTables_Glyf_Simple = function(reader, numberOfContours, minAndMax, byteIndexOfTable)
-	{
-		var offsetInBytes = reader.byteIndexCurrent - byteIndexOfTable;
-
-		var endPointsOfContours = [];
-		for (var c = 0; c < numberOfContours; c++)
-		{
-			var endPointOfContour = reader.readShort();
-			endPointsOfContours.push(endPointOfContour);
-		}
-
-		var totalLengthOfInstructionsInBytes = reader.readShort();
-		var instructionsAsBytes = reader.readBytes
-		(
-			totalLengthOfInstructionsInBytes
-		);
-
-		var numberOfPoints =
-			endPointsOfContours[endPointsOfContours.length - 1]
-			+ 1;
-
-		var flagSets = [];
-		var numberOfPointsSoFar = 0;
-		while (numberOfPointsSoFar < numberOfPoints)
-		{
-			var flagsAsByte = reader.readByte();
-
-			var flags = FontTrueTypeGlyphContourFlags.fromByte(flagsAsByte);
-
-			flags.timesToRepeat  = (flags.timesToRepeat == true ? reader.readByte() : 0);
-
-			numberOfPointsSoFar += (1 + flags.timesToRepeat);
-
-			flagSets.push(flags);
-		}
-
-		var coordinates = [];
-
-		var xPrev = 0;
-		for (var f = 0; f < flagSets.length; f++)
-		{
-			var flags = flagSets[f];
-			for (var r = 0; r <= flags.timesToRepeat; r++)
-			{
-				var x;
-				if (flags.xShortVector == true)
-				{
-					x = reader.readByte();
-					var sign = (flags.xIsSame ? 1 : -1);
-					x *= sign;
-					x += xPrev;
-				}
-				else
-				{
-					if (flags.xIsSame == true)
-					{
-						x = xPrev;
-					}
-					else
-					{
-						x = reader.readShortSigned();
-						x += xPrev;
-					}
-				}
-
-				var coordinate = new Coords(x, 0);
-				coordinates.push(coordinate);
-				xPrev = x;
-			}
-		}
-
-		var yPrev = 0;
-		var coordinateIndex = 0;
-		for (var f = 0; f < flagSets.length; f++)
-		{
-			var flags = flagSets[f];
-			for (var r = 0; r <= flags.timesToRepeat; r++)
-			{
-				var coordinate = coordinates[coordinateIndex];
-
-				var y;
-				if (flags.yShortVector == true)
-				{
-					y = reader.readByte();
-					var sign = (flags.yIsSame ? 1 : -1);
-					y *= sign;
-					y += yPrev;
-				}
-				else
-				{
-					if (flags.yIsSame == true)
-					{
-						y = yPrev;
-					}
-					else
-					{
-						y = reader.readShortSigned();
-						y += yPrev;
-					}
-				}
-
-				coordinate.y = y;
-				yPrev = y;
-
-				coordinateIndex++;
-			}
-		}
-
-		reader.align16Bit();
-
-		var glyph = new FontTrueTypeGlyph
-		(
-			minAndMax,
-			endPointsOfContours,
-			instructionsAsBytes,
-			flagSets,
-			coordinates,
-			offsetInBytes
-		);
-
-		return glyph;
-	};
-
-	FontTrueType.prototype.fromBytes_ReadTables_Glyf_Composite = function(reader, byteIndexOfTable)
-	{
-		var offsetInBytes = reader.byteIndexCurrent - byteIndexOfTable;
-
-		// "composite" glyph
-
-		var flagSets = [];
-		var flags = null;
-		var childGlyphIndices = [];
-
-		while (true)
-		{
-			// See:
-			// https://docs.microsoft.com/en-us/typography/opentype/spec/glyf
-
-			var flagsAsShort = reader.readShort();
-			flags = FontTrueTypeGlyphCompositeFlags.fromShort(flagsAsShort);
-			flagSets.push(flags);
-
-			var childGlyphIndex = reader.readShort();
-			childGlyphIndices.push(childGlyphIndex);
-
-			var argument1 = (flags.areArgs1And2Words? reader.readShort() : reader.readByte());
-			var argument2 = (flags.areArgs1And2Words? reader.readShort() : reader.readByte());
-
-			if (flags.isThereASimpleScale)
-			{
-				var scaleFactor = reader.readShort();
-				var scale = new Coords(scaleFactor, scaleFactor);
-			}
-			else if (flags.areXAndYScalesDifferent)
-			{
-				var scale = new Coords
-				(
-					reader.readShort(),
-					reader.readShort()
-				);
-			}
-			else if (flags.use2By2Transform)
-			{
-				// ???
-				var scaleX = reader.readShort();
-				var scale01 = reader.readShort();
-				var scale02 = reader.readShort();
-				var scaleY = reader.readShort();
-			}
-			else
-			{
-				var scale = new Coords(1.0, 1.0);
-			}
-
-			if (flags.areThereMoreComponentGlyphs == false)
-			{
-				break;
-			}
-		}
-
-		if (flags.areThereInstructions == true)
-		{
-			var numberOfInstructions = reader.readShort();
-			var instructions = reader.readBytes(numberOfInstructions);
-		}
-
-		var glyphComposite = new FontTrueTypeGlyphComposite
-		(
-			this, childGlyphIndices, offsetInBytes
-		);
-
-		return glyphComposite;
 	};
 
 	FontTrueType.prototype.fromBytes_ReadTables_Head = function(reader, length)

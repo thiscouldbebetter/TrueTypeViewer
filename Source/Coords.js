@@ -25,6 +25,13 @@ function Coords(x, y)
 		return this;
 	};
 
+	Coords.prototype.multiply = function(other)
+	{
+		this.x *= other.x;
+		this.y *= other.y;
+		return this;
+	};
+
 	Coords.prototype.multiplyScalar = function(scalar)
 	{
 		this.x *= scalar;
