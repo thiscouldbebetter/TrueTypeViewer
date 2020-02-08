@@ -25,6 +25,84 @@ function Glyph
 
 	// methods
 
+	Glyph.tableFromBytes = function(reader, length)
+	{
+		var glyphs = [];
+
+		var byteIndexOfTable = reader.byteIndexCurrent;
+		var bytesForContoursMinMax = 10;
+		var glyphOffsetBase = byteIndexOfTable + bytesForContoursMinMax;
+		var byteIndexOfTableEnd = byteIndexOfTable + length;
+
+		while (reader.byteIndexCurrent < byteIndexOfTableEnd)
+		{
+			// header
+			var numberOfContours = reader.readShortSigned();
+			if (numberOfContours == 0)
+			{
+				continue;
+			}
+
+			var min = new Coords
+			(
+				reader.readShortSigned(),
+				reader.readShortSigned()
+			);
+			var max = new Coords
+			(
+				reader.readShortSigned(),
+				reader.readShortSigned()
+			);
+			var minAndMax = [min, max];
+
+			var glyph;
+			var offsetInBytes = reader.byteIndexCurrent - glyphOffsetBase;
+			var isGlyphSimpleNotComposite = (numberOfContours >= 0);
+			if (isGlyphSimpleNotComposite)
+			{
+				glyph = new Glyph();
+				glyph.fromByteStream
+				(
+					reader,
+					numberOfContours,
+					minAndMax,
+					offsetInBytes
+				);
+			}
+			else
+			{
+				glyph = GlyphComposite();
+				glyph.fromByteStreamAndOffset
+				(
+					reader,
+					offsetInBytes
+				);
+			}
+
+			// Should we align on 16 or 32 bits?
+			// If 32, impact.ttf fails to parse correctly.
+			// If 16, the intentionally-simple thiscouldbebetter 3x5 font fails.
+			// With no alignment, neither works.
+			reader.align16Bit();
+			//reader.align32Bit();
+
+			glyphs.push(glyph);
+		}
+
+		// hack
+		// This is terrible, but then again,
+		// so is indexing glyphs by their byte offsets.
+		for (var i = 0; i < glyphs.length; i++)
+		{
+			var glyph = glyphs[i];
+			var glyphOffset = glyph.offsetInBytes;
+			var glyphOffsetAsKey = "_" + glyphOffset;
+			glyphs[glyphOffsetAsKey] = glyph;
+		}
+
+		return glyphs;
+	};
+
 	Glyph.prototype.drawToDisplay = function(display, fontHeightInPixels, font, offsetForBaseLines, drawOffset)
 	{
 		var fUnitsPerPixel = Glyph.DimensionInFUnits / fontHeightInPixels;
