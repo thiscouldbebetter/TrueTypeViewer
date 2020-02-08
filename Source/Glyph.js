@@ -1,20 +1,10 @@
 
-function Glyph
-(
-	minAndMax,
-	endPointsOfContours,
-	instructionsAsBytes,
-	flagSets,
-	coordinates,
-	offsetInBytes
-)
+function Glyph(minAndMax, instructionsAsBytes, offsetInBytes, contours)
 {
 	this.minAndMax = minAndMax;
-	this.endPointsOfContours = endPointsOfContours;
 	this.instructionsAsBytes = instructionsAsBytes;
-	this.flagSets = flagSets;
-	this.coordinates = coordinates;
 	this.offsetInBytes = offsetInBytes;
+	this.contours = contours;
 }
 
 {
@@ -105,165 +95,37 @@ function Glyph
 
 	Glyph.prototype.drawToDisplay = function(display, fontHeightInPixels, font, offsetForBaseLines, drawOffset)
 	{
+		var contours = this.contours;
+
 		var fUnitsPerPixel = Glyph.DimensionInFUnits / fontHeightInPixels;
 
-		var contourPointSets = this.drawToDisplay_ContourPointSetsBuild
-		(
-			fUnitsPerPixel, offsetForBaseLines, fontHeightInPixels
-		);
-
-		var contours = this.drawToDisplay_ContoursBuild
-		(
-			contourPointSets
-		);
+		for (var i = 0; i < contours.length; i++)
+		{
+			var contour = contours[i];
+			var contourSegments = contour.segments;
+			for (var j = 0; j < contourSegments.length; j++)
+			{
+				var contourSegment = contourSegments[j];
+				var points = [ contourSegment.startPoint, contourSegment.curveControlPoint ];
+				for (var p = 0; p < points.length; p++)
+				{
+					var point = points[p];
+					if (point != null)
+					{
+						point.divideScalar
+						(
+							fUnitsPerPixel
+						).add
+						(
+							offsetForBaseLines
+						);
+						point.y = fontHeightInPixels - point.y;
+					}
+				}
+			}
+		}
 
 		this.drawToDisplay_ContoursDraw(display, contours, drawOffset);
-	};
-
-	Glyph.prototype.drawToDisplay_ContourPointSetsBuild = function
-	(
-		fUnitsPerPixel, offsetForBaseLines, fontHeightInPixels
-	)
-	{
-		// Convert the flags and coordinates
-		// into sets of points on the contours of the glyph.
-
-		var contourPointSets = [];
-
-		var contourIndex = 0;
-		var coordinateIndex = 0;
-		var endPointOfContourCurrent = this.endPointsOfContours[contourIndex];
-
-		var coordinateInFUnits = new Coords(0, 0);
-		var coordinateInPixels = new Coords(0, 0);
-		var coordinateInPixelsPrev = new Coords(0, 0);
-
-		var numberOfContours = this.endPointsOfContours.length;
-		var curveControlPoints = [];
-
-		var contourPoints = [];
-
-		for (var f = 0; f < this.flagSets.length; f++)
-		{
-			var flags = this.flagSets[f];
-			for (var r = 0; r <= flags.timesToRepeat; r++)
-			{
-				var coordinateInFUnits = this.coordinates[coordinateIndex];
-
-				coordinateInPixelsPrev.overwriteWith(coordinateInPixels);
-				coordinateInPixels.overwriteWith
-				(
-					coordinateInFUnits
-				).divideScalar
-				(
-					fUnitsPerPixel
-				).add
-				(
-					offsetForBaseLines
-				);
-
-				coordinateInPixels.y =
-					fontHeightInPixels - coordinateInPixels.y;
-
-				var contourPoint = new GlyphContourPoint
-				(
-					coordinateInPixels.clone(),
-					flags.isOnContour
-				);
-
-				contourPoints.push(contourPoint);
-
-				if (coordinateIndex == endPointOfContourCurrent)
-				{
-					contourPointSets.push(contourPoints);
-					contourPoints = [];
-					contourIndex++;
-					if (contourIndex < numberOfContours)
-					{
-						endPointOfContourCurrent =
-							this.endPointsOfContours[contourIndex];
-					}
-				}
-
-				coordinateIndex++;
-			}
-		}
-
-		return contourPointSets;
-	};
-
-	Glyph.prototype.drawToDisplay_ContoursBuild = function(contourPointSets)
-	{
-		// Convert sets of points on the contours of the glyph
-		// into sets of line segments and/or curves,
-		// and build contours from those sets of segments and curves.
-
-		var contours = [];
-
-		for (var c = 0; c < contourPointSets.length; c++)
-		{
-			var contourPoints = contourPointSets[c];
-			var contourSegments = [];
-
-			for (var p = 0; p < contourPoints.length; p++)
-			{
-				var pNext = p + 1;
-				if (pNext >= contourPoints.length)
-				{
-					pNext = 0;
-				}
-
-				var contourPoint = contourPoints[p];
-				var contourPointNext = contourPoints[pNext];
-
-				if (contourPoint.isOnContour)
-				{
-					if (contourPointNext.isOnContour)
-					{
-						var segment = new GlyphContourSegment
-						(
-							contourPoint.position, null
-						);
-
-						contourSegments.push(segment);
-					}
-					else
-					{
-						var segment = new GlyphContourSegment
-						(
-							contourPoint.position,
-							contourPointNext.position
-						);
-
-						contourSegments.push(segment);
-					}
-				}
-				else if (contourPointNext.isOnContour)
-				{
-					// do nothing
-				}
-				else
-				{
-					var midpointBetweenContourPointAndNext = contourPoint.position.clone().add
-					(
-						contourPointNext.position
-					).divideScalar(2);
-
-					var segment = new GlyphContourSegment
-					(
-						midpointBetweenContourPointAndNext,
-						contourPointNext.position
-					);
-
-					contourSegments.push(segment);
-				}
-			}
-
-			var contour = new GlyphContour(contourSegments);
-			contours.push(contour);
-		}
-
-		return contours;
 	};
 
 	Glyph.prototype.drawToDisplay_ContoursDraw = function(display, contours, drawOffset)
@@ -418,12 +280,146 @@ function Glyph
 		} // end for f
 
 		this.minAndMax = minAndMax;
-		this.endPointsOfContours = endPointsOfContours;
 		this.instructionsAsBytes = instructionsAsBytes;
-		this.flagSets = flagSets;
-		this.coordinates = coordinates;
 		this.offsetInBytes = offsetInBytes;
+		this.contours = this.fromByteStream_ContoursBuild
+		(
+			endPointsOfContours, flagSets, coordinates
+		);
 
 		return this;
+	};
+
+	Glyph.prototype.fromByteStream_ContoursBuild = function
+	(
+		endPointsOfContours, flagSets, coordinates
+	)
+	{
+		// Convert sets of points on the contours of the glyph
+		// into sets of line segments and/or curves,
+		// and build contours from those sets of segments and curves.
+
+		var contourPointSets = this.fromByteStream_ContoursBuild_PointSetsBuild
+		(
+			endPointsOfContours, flagSets, coordinates
+		);
+
+		var contours = [];
+
+		for (var c = 0; c < contourPointSets.length; c++)
+		{
+			var contourPoints = contourPointSets[c];
+			var contourSegments = [];
+
+			for (var p = 0; p < contourPoints.length; p++)
+			{
+				var pNext = p + 1;
+				if (pNext >= contourPoints.length)
+				{
+					pNext = 0;
+				}
+
+				var contourPoint = contourPoints[p];
+				var contourPointNext = contourPoints[pNext];
+
+				if (contourPoint.isOnContour)
+				{
+					var segment = new GlyphContourSegment
+					(
+						contourPoint.position,
+						(contourPointNext.isOnContour ? null : contourPointNext.position)
+					);
+
+					contourSegments.push(segment);
+				}
+				else if (contourPointNext.isOnContour)
+				{
+					// Do nothing.
+				}
+				else
+				{
+					var midpointBetweenContourPointAndNext = contourPoint.position.clone().add
+					(
+						contourPointNext.position
+					).divideScalar(2);
+
+					var segment = new GlyphContourSegment
+					(
+						midpointBetweenContourPointAndNext,
+						contourPointNext.position
+					);
+
+					contourSegments.push(segment);
+				}
+			}
+
+			var contour = new GlyphContour(contourSegments);
+			contours.push(contour);
+		}
+
+		return contours;
+	};
+
+	Glyph.prototype.fromByteStream_ContoursBuild_PointSetsBuild = function
+	(
+		endPointsOfContours, flagSets, coordinates
+	)
+	{
+		// Convert the flags and coordinates
+		// into sets of points on the contours of the glyph.
+
+		var contourPointSets = [];
+
+		var contourIndex = 0;
+		var coordinateIndex = 0;
+		var endPointOfContourCurrent = endPointsOfContours[contourIndex];
+
+		var coordinateInFUnits = new Coords(0, 0);
+		var coordinateInPixels = new Coords(0, 0);
+		var coordinateInPixelsPrev = new Coords(0, 0);
+
+		var numberOfContours = endPointsOfContours.length;
+		var curveControlPoints = [];
+
+		var contourPoints = [];
+
+		for (var f = 0; f < flagSets.length; f++)
+		{
+			var flags = flagSets[f];
+			for (var r = 0; r <= flags.timesToRepeat; r++)
+			{
+				var coordinateInFUnits = coordinates[coordinateIndex];
+
+				coordinateInPixelsPrev.overwriteWith(coordinateInPixels);
+				coordinateInPixels.overwriteWith
+				(
+					coordinateInFUnits
+				);
+
+				var contourPoint = new GlyphContourPoint
+				(
+					coordinateInPixels.clone(),
+					flags.isOnContour
+				);
+
+				contourPoints.push(contourPoint);
+
+				if (coordinateIndex == endPointOfContourCurrent)
+				{
+					contourPointSets.push(contourPoints);
+					contourPoints = [];
+					contourIndex++;
+					if (contourIndex < numberOfContours)
+					{
+						endPointOfContourCurrent =
+							endPointsOfContours[contourIndex];
+					}
+				}
+
+				coordinateIndex++;
+			}
+		}
+
+		return contourPointSets;
 	};
 }
