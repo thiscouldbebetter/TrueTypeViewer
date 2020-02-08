@@ -1,5 +1,5 @@
 
-function FontTrueTypeGlyphComposite(childGlyphDatas, offsetInBytes)
+function GlyphComposite(childGlyphDatas, offsetInBytes)
 {
 	this.childGlyphDatas = childGlyphDatas;
 	this.offsetInBytes = offsetInBytes;
@@ -7,7 +7,7 @@ function FontTrueTypeGlyphComposite(childGlyphDatas, offsetInBytes)
 {
 	// drawable
 
-	FontTrueTypeGlyphComposite.prototype.drawToDisplay = function(display, fontHeightInPixels, font, offsetForBaseLines, drawPos)
+	GlyphComposite.prototype.drawToDisplay = function(display, fontHeightInPixels, font, offsetForBaseLines, drawPos)
 	{
 		var childGlyphDatas = this.childGlyphDatas;
 		for (var i = 0; i < childGlyphDatas.length; i++)
@@ -19,7 +19,7 @@ function FontTrueTypeGlyphComposite(childGlyphDatas, offsetInBytes)
 
 	// file
 
-	FontTrueTypeGlyphComposite.prototype.fromByteStreamAndOffset = function(reader, offsetInBytes)
+	GlyphComposite.prototype.fromByteStreamAndOffset = function(reader, offsetInBytes)
 	{
 		// "composite" glyph
 
@@ -33,7 +33,7 @@ function FontTrueTypeGlyphComposite(childGlyphDatas, offsetInBytes)
 			// https://docs.microsoft.com/en-us/typography/opentype/spec/glyf
 
 			var flagsAsShort = reader.readShort();
-			flags = FontTrueTypeGlyphCompositeFlags.fromShort(flagsAsShort);
+			flags = GlyphCompositeFlags.fromShort(flagsAsShort);
 			flagSets.push(flags);
 
 			var childGlyphIndex = reader.readShort();
@@ -61,7 +61,7 @@ function FontTrueTypeGlyphComposite(childGlyphDatas, offsetInBytes)
 				console.log("Unsupported child glyph offset argument type.");
 			}
 			
-			var childGlyphData = new FontTrueTypeGlyphCompositeChildGlyphData
+			var childGlyphData = new GlyphCompositeChildGlyphData
 			(
 				childGlyphIndex,
 				childGlyphOffset
@@ -70,7 +70,7 @@ function FontTrueTypeGlyphComposite(childGlyphDatas, offsetInBytes)
 
 			var scale;
 			// hack
-			var scaleDivisor = FontTrueTypeGlyph.DimensionInFUnits * 8; 
+			var scaleDivisor = Glyph.DimensionInFUnits * 8; 
 			if (flags.isThereASimpleScale)
 			{
 				var scaleFactor = reader.readShort();
@@ -123,13 +123,13 @@ function FontTrueTypeGlyphComposite(childGlyphDatas, offsetInBytes)
 	};
 }
 
-function FontTrueTypeGlyphCompositeChildGlyphData(glyphIndex, offset)
+function GlyphCompositeChildGlyphData(glyphIndex, offset)
 {
 	this.glyphIndex = glyphIndex;
 	this.offset = offset;
 }
 {
-	FontTrueTypeGlyphCompositeChildGlyphData.prototype.glyphFromFont = function(font)
+	GlyphCompositeChildGlyphData.prototype.glyphFromFont = function(font)
 	{
 		var returnValues = [];
 
@@ -143,7 +143,7 @@ function FontTrueTypeGlyphCompositeChildGlyphData(glyphIndex, offset)
 
 	// drawable
 
-	FontTrueTypeGlyphCompositeChildGlyphData.prototype.drawToDisplay = function(display, fontHeightInPixels, font, offsetForBaseLines, drawPos)
+	GlyphCompositeChildGlyphData.prototype.drawToDisplay = function(display, fontHeightInPixels, font, offsetForBaseLines, drawPos)
 	{
 		var childGlyph = this.glyphFromFont(font);
 
@@ -154,7 +154,7 @@ function FontTrueTypeGlyphCompositeChildGlyphData(glyphIndex, offset)
 		else
 		{
 			// hack - Should calculate this elsewhere.
-			var fUnitsPerPixel = FontTrueTypeGlyph.DimensionInFUnits / fontHeightInPixels;
+			var fUnitsPerPixel = Glyph.DimensionInFUnits / fontHeightInPixels;
 			var drawPosAdjusted = drawPos.clone().add(this.offset.clone().divideScalar(fUnitsPerPixel));
 
 			childGlyph.drawToDisplay(display, fontHeightInPixels, font, offsetForBaseLines, drawPosAdjusted);

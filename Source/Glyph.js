@@ -1,5 +1,5 @@
 
-function FontTrueTypeGlyph
+function Glyph
 (
 	minAndMax,
 	endPointsOfContours,
@@ -20,14 +20,14 @@ function FontTrueTypeGlyph
 {
 	// constants
 
-	FontTrueTypeGlyph.PointsPerInch = 72;
-	FontTrueTypeGlyph.DimensionInFUnits = 2048;
+	Glyph.PointsPerInch = 72;
+	Glyph.DimensionInFUnits = 2048;
 
 	// methods
 
-	FontTrueTypeGlyph.prototype.drawToDisplay = function(display, fontHeightInPixels, font, offsetForBaseLines, drawOffset)
+	Glyph.prototype.drawToDisplay = function(display, fontHeightInPixels, font, offsetForBaseLines, drawOffset)
 	{
-		var fUnitsPerPixel = FontTrueTypeGlyph.DimensionInFUnits / fontHeightInPixels;
+		var fUnitsPerPixel = Glyph.DimensionInFUnits / fontHeightInPixels;
 
 		var contourPointSets = this.drawToDisplay_ContourPointSetsBuild
 		(
@@ -42,7 +42,7 @@ function FontTrueTypeGlyph
 		this.drawToDisplay_ContoursDraw(display, contours, drawOffset);
 	};
 
-	FontTrueTypeGlyph.prototype.drawToDisplay_ContourPointSetsBuild = function
+	Glyph.prototype.drawToDisplay_ContourPointSetsBuild = function
 	(
 		fUnitsPerPixel, offsetForBaseLines, fontHeightInPixels
 	)
@@ -87,7 +87,7 @@ function FontTrueTypeGlyph
 				coordinateInPixels.y =
 					fontHeightInPixels - coordinateInPixels.y;
 
-				var contourPoint = new FontTrueTypeGlyphContourPoint
+				var contourPoint = new GlyphContourPoint
 				(
 					coordinateInPixels.clone(),
 					flags.isOnContour
@@ -114,7 +114,7 @@ function FontTrueTypeGlyph
 		return contourPointSets;
 	};
 
-	FontTrueTypeGlyph.prototype.drawToDisplay_ContoursBuild = function(contourPointSets)
+	Glyph.prototype.drawToDisplay_ContoursBuild = function(contourPointSets)
 	{
 		// Convert sets of points on the contours of the glyph
 		// into sets of line segments and/or curves,
@@ -142,7 +142,7 @@ function FontTrueTypeGlyph
 				{
 					if (contourPointNext.isOnContour)
 					{
-						var segment = new FontTrueTypeGlyphContourSegment
+						var segment = new GlyphContourSegment
 						(
 							contourPoint.position, null
 						);
@@ -151,7 +151,7 @@ function FontTrueTypeGlyph
 					}
 					else
 					{
-						var segment = new FontTrueTypeGlyphContourSegment
+						var segment = new GlyphContourSegment
 						(
 							contourPoint.position,
 							contourPointNext.position
@@ -171,7 +171,7 @@ function FontTrueTypeGlyph
 						contourPointNext.position
 					).divideScalar(2);
 
-					var segment = new FontTrueTypeGlyphContourSegment
+					var segment = new GlyphContourSegment
 					(
 						midpointBetweenContourPointAndNext,
 						contourPointNext.position
@@ -181,14 +181,14 @@ function FontTrueTypeGlyph
 				}
 			}
 
-			var contour = new FontTrueTypeGlyphContour(contourSegments);
+			var contour = new GlyphContour(contourSegments);
 			contours.push(contour);
 		}
 
 		return contours;
 	};
 
-	FontTrueTypeGlyph.prototype.drawToDisplay_ContoursDraw = function(display, contours, drawOffset)
+	Glyph.prototype.drawToDisplay_ContoursDraw = function(display, contours, drawOffset)
 	{
 		// Render the contours of the glyph.
 
@@ -235,7 +235,7 @@ function FontTrueTypeGlyph
 
 	// file
 
-	FontTrueTypeGlyph.prototype.fromByteStream = function(reader, numberOfContours, minAndMax, offsetInBytes)
+	Glyph.prototype.fromByteStream = function(reader, numberOfContours, minAndMax, offsetInBytes)
 	{
 		var endPointsOfContours = [];
 		for (var c = 0; c < numberOfContours; c++)
@@ -260,7 +260,7 @@ function FontTrueTypeGlyph
 		{
 			var flagsAsByte = reader.readByte();
 
-			var flags = FontTrueTypeGlyphContourFlags.fromByte(flagsAsByte);
+			var flags = GlyphContourFlags.fromByte(flagsAsByte);
 
 			flags.timesToRepeat = (flags.timesToRepeat ? reader.readByte() : 0);
 

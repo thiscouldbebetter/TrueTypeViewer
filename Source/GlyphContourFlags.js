@@ -1,5 +1,5 @@
 
-function FontTrueTypeGlyphContourFlags
+function GlyphContourFlags
 (
 	isOnContour,
 	xIsShortVector,
@@ -32,9 +32,9 @@ function FontTrueTypeGlyphContourFlags
 }
 
 {
-	FontTrueTypeGlyphContourFlags.fromByte = function(flagsAsByte)
+	GlyphContourFlags.fromByte = function(flagsAsByte)
 	{
-		var returnValue = new FontTrueTypeGlyphContourFlags
+		var returnValue = new GlyphContourFlags
 		(
 			((flagsAsByte & 1) > 0), // isOnContour
 			((flagsAsByte >> 1 & 1) > 0), // xIsShortVector

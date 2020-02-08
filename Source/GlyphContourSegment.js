@@ -1,5 +1,5 @@
 
-function FontTrueTypeGlyphContourSegment(startPoint, curveControlPoint)
+function GlyphContourSegment(startPoint, curveControlPoint)
 {
 	this.startPoint = startPoint;
 	this.curveControlPoint = curveControlPoint;

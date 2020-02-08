@@ -87,7 +87,7 @@ function FontTrueType(name)
 			var offsetInBytes = reader.readInt();
 			var length = reader.readInt();
 
-			var tableDefn = new FontTrueTypeTableDefn
+			var tableDefn = new TableDefn
 			(
 				tableTypeTag,
 				checkSum,
@@ -180,7 +180,7 @@ function FontTrueType(name)
 			var encodingID = reader.readShort(); // 1 = Unicode
 			var offsetInBytes = reader.readInt(); // 32 bits, TrueType "long"
 
-			var encodingTable = new FontTrueTypeCmapEncodingTable
+			var encodingTable = new CmapEncodingTable
 			(
 				platformID,
 				encodingID,
@@ -388,7 +388,7 @@ function FontTrueType(name)
 			var isGlyphSimpleNotComposite = (numberOfContours >= 0);
 			if (isGlyphSimpleNotComposite)
 			{
-				glyph = new FontTrueTypeGlyph();
+				glyph = new Glyph();
 				glyph.fromByteStream
 				(
 					reader,
@@ -399,7 +399,7 @@ function FontTrueType(name)
 			}
 			else
 			{
-				glyph = new FontTrueTypeGlyphComposite();
+				glyph = GlyphComposite();
 				glyph.fromByteStreamAndOffset
 				(
 					reader,
@@ -470,7 +470,7 @@ function FontTrueType(name)
 		var indexToLocFormat = reader.readShort(); // 0 for short offsets, 1 long
 		var glyphDataFormat = reader.readShort(); // "0 for current format"
 
-		var returnValue = new FontTrueTypeHeaderTable
+		var returnValue = new HeaderTable
 		(
 			tableVersion,
 			fontRevision,
@@ -530,7 +530,7 @@ function FontTrueType(name)
 
 		reader.byteIndexCurrent = readerByteOffsetOriginal;
 
-		var returnValue = new FontTrueTypeLocationTable(offsets);
+		var returnValue = new LocationTable(offsets);
 
 		return returnValue;
 	};
@@ -543,7 +543,7 @@ function FontTrueType(name)
 
 		var version = reader.readInt();
 		var numberOfGlyphs = reader.readShort();
-		var maxPointsPerFontTrueTypeGlyphSimple = reader.readShort();
+		var maxPointsPerGlyphSimple = reader.readShort();
 		var maxContoursPerGlyphSimple = reader.readShort();
 		var maxPointsPerGlyphComposite = reader.readShort();
 		var maxContoursPerGlyphComposite = reader.readShort();
@@ -552,7 +552,7 @@ function FontTrueType(name)
 
 		reader.byteIndexCurrent = readerByteOffsetOriginal;
 
-		var returnValue = new FontTrueTypeMaximumProfile(numberOfGlyphs);
+		var returnValue = new MaximumProfile(numberOfGlyphs);
 
 		return returnValue;
 	};

@@ -1,5 +1,5 @@
 
-function FontTrueTypeHeaderTable
+function HeaderTable
 (
 	tableVersion,
 	fontRevision,

@@ -1,5 +1,5 @@
 
-function FontTrueTypeCmapEncodingTable
+function CmapEncodingTable
 (
 	platformID,
 	encodingID,

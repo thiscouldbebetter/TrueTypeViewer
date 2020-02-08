@@ -1,5 +1,5 @@
 
-function FontTrueTypeTableDefn
+function TableDefn
 (
 	tableTypeTag,
 	checkSum,

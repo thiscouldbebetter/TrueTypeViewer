@@ -1,5 +1,5 @@
 
-function FontTrueTypeGlyphCompositeFlags
+function GlyphCompositeFlags
 (
 	areArgs1And2Words,
 	areArgsXYValues,
@@ -32,9 +32,9 @@ function FontTrueTypeGlyphCompositeFlags
 }
 
 {
-	FontTrueTypeGlyphCompositeFlags.fromShort = function(flagsAsShort)
+	GlyphCompositeFlags.fromShort = function(flagsAsShort)
 	{
-		var returnValue = new FontTrueTypeGlyphCompositeFlags
+		var returnValue = new GlyphCompositeFlags
 		(
 			((flagsAsShort & 1) > 0),
 			((flagsAsShort >> 1 & 1) > 0),
