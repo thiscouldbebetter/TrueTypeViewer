@@ -90,7 +90,7 @@ function FontTrueTypeGlyph
 				var contourPoint = new FontTrueTypeGlyphContourPoint
 				(
 					coordinateInPixels.clone(),
-					flags.onCurve
+					flags.isOnContour
 				);
 
 				contourPoints.push(contourPoint);
@@ -138,9 +138,9 @@ function FontTrueTypeGlyph
 				var contourPoint = contourPoints[p];
 				var contourPointNext = contourPoints[pNext];
 
-				if (contourPoint.isOnCurve == true)
+				if (contourPoint.isOnContour)
 				{
-					if (contourPointNext.isOnCurve == true)
+					if (contourPointNext.isOnContour)
 					{
 						var segment = new FontTrueTypeGlyphContourSegment
 						(
@@ -160,27 +160,24 @@ function FontTrueTypeGlyph
 						contourSegments.push(segment);
 					}
 				}
-				else // if (contourPoint.isOnCurve == false)
+				else if (contourPointNext.isOnContour)
 				{
-					if (contourPointNext.isOnCurve == true)
-					{
-						// do nothing
-					}
-					else
-					{
-						var midpointBetweenContourPointAndNext = contourPoint.position.clone().add
-						(
-							contourPointNext.position
-						).divideScalar(2);
+					// do nothing
+				}
+				else
+				{
+					var midpointBetweenContourPointAndNext = contourPoint.position.clone().add
+					(
+						contourPointNext.position
+					).divideScalar(2);
 
-						var segment = new FontTrueTypeGlyphContourSegment
-						(
-							midpointBetweenContourPointAndNext,
-							contourPointNext.position
-						);
+					var segment = new FontTrueTypeGlyphContourSegment
+					(
+						midpointBetweenContourPointAndNext,
+						contourPointNext.position
+					);
 
-						contourSegments.push(segment);
-					}
+					contourSegments.push(segment);
 				}
 			}
 
@@ -265,7 +262,7 @@ function FontTrueTypeGlyph
 
 			var flags = FontTrueTypeGlyphContourFlags.fromByte(flagsAsByte);
 
-			flags.timesToRepeat  = (flags.timesToRepeat == true ? reader.readByte() : 0);
+			flags.timesToRepeat = (flags.timesToRepeat ? reader.readByte() : 0);
 
 			numberOfPointsSoFar += (1 + flags.timesToRepeat);
 
@@ -281,31 +278,30 @@ function FontTrueTypeGlyph
 			for (var r = 0; r <= flags.timesToRepeat; r++)
 			{
 				var x;
-				if (flags.xShortVector == true)
+				if (flags.xIsShortVector)
 				{
 					x = reader.readByte();
-					var sign = (flags.xIsSame ? 1 : -1);
+					var sign = (flags.xIsSameOrSignIfShort ? 1 : -1);
 					x *= sign;
 					x += xPrev;
 				}
+				else if (flags.xIsSameOrSignIfShort)
+				{
+					x = xPrev;
+				}
 				else
 				{
-					if (flags.xIsSame == true)
-					{
-						x = xPrev;
-					}
-					else
-					{
-						x = reader.readShortSigned();
-						x += xPrev;
-					}
+					x = reader.readShortSigned();
+					x += xPrev;
 				}
 
 				var coordinate = new Coords(x, 0);
 				coordinates.push(coordinate);
 				xPrev = x;
-			}
-		}
+
+			} // end for r
+
+		} // end for f
 
 		var yPrev = 0;
 		var coordinateIndex = 0;
@@ -317,34 +313,31 @@ function FontTrueTypeGlyph
 				var coordinate = coordinates[coordinateIndex];
 
 				var y;
-				if (flags.yShortVector == true)
+				if (flags.yIsShortVector)
 				{
 					y = reader.readByte();
-					var sign = (flags.yIsSame ? 1 : -1);
+					var sign = (flags.yIsSameOrSignIfShort ? 1 : -1);
 					y *= sign;
 					y += yPrev;
 				}
+				else if (flags.yIsSameOrSignIfShort)
+				{
+					y = yPrev;
+				}
 				else
 				{
-					if (flags.yIsSame == true)
-					{
-						y = yPrev;
-					}
-					else
-					{
-						y = reader.readShortSigned();
-						y += yPrev;
-					}
+					y = reader.readShortSigned();
+					y += yPrev;
 				}
 
 				coordinate.y = y;
 				yPrev = y;
 
 				coordinateIndex++;
-			}
-		}
 
-		reader.align16Bit();
+			} // end for r
+
+		} // end for f
 
 		this.minAndMax = minAndMax;
 		this.endPointsOfContours = endPointsOfContours;

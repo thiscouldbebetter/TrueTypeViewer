@@ -45,6 +45,8 @@ function FontTrueTypeGlyphComposite(childGlyphDatas, offsetInBytes)
 
 			if (flags.areArgsXYValues)
 			{
+				// "signed xy values"
+				// todo - Should be signed.
 				childGlyphOffset = new Coords
 				(
 					xOffsetOrPointIndexChild,
@@ -53,6 +55,7 @@ function FontTrueTypeGlyphComposite(childGlyphDatas, offsetInBytes)
 			}
 			else
 			{
+				// "unsigned point numbers".
 				// todo - Mapping of points from child simple glyph to composite glyph.
 				childGlyphOffset = new Coords(0, 0); // hack
 				console.log("Unsupported child glyph offset argument type.");
@@ -144,10 +147,17 @@ function FontTrueTypeGlyphCompositeChildGlyphData(glyphIndex, offset)
 	{
 		var childGlyph = this.glyphFromFont(font);
 
-		// hack - Should calculate this elsewhere.
-		var fUnitsPerPixel = FontTrueTypeGlyph.DimensionInFUnits / fontHeightInPixels;
-		var drawPosAdjusted = drawPos.clone().add(this.offset.clone().divideScalar(fUnitsPerPixel));
+		if (childGlyph == null)
+		{
+			console.log("Could not find glyph!");
+		}
+		else
+		{
+			// hack - Should calculate this elsewhere.
+			var fUnitsPerPixel = FontTrueTypeGlyph.DimensionInFUnits / fontHeightInPixels;
+			var drawPosAdjusted = drawPos.clone().add(this.offset.clone().divideScalar(fUnitsPerPixel));
 
-		childGlyph.drawToDisplay(display, fontHeightInPixels, font, offsetForBaseLines, drawPosAdjusted);
+			childGlyph.drawToDisplay(display, fontHeightInPixels, font, offsetForBaseLines, drawPosAdjusted);
+		}
 	};
 }

@@ -163,7 +163,11 @@ function FontTrueType(name)
 
 	FontTrueType.prototype.fromBytes_ReadTables_Cmap = function(reader, length)
 	{
-		var readerByteOffsetOriginal = reader.byteIndexCurrent;
+		// See:
+		// https://docs.microsoft.com/en-us/typography/opentype/spec/cmap
+		// https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6cmap.html
+
+		var cmapTableOffsetInBytes = reader.byteIndexCurrent;
 
 		var version = reader.readShort();
 
@@ -172,7 +176,7 @@ function FontTrueType(name)
 
 		for (var e = 0; e < numberOfEncodingTables; e++)
 		{
-			var platformID = reader.readShort(); // 3 = Microsoft
+			var platformID = reader.readShort(); // 0 = Unicode, 1 = Mac, 3 = Microsoft Windows, 4 = Custom
 			var encodingID = reader.readShort(); // 1 = Unicode
 			var offsetInBytes = reader.readInt(); // 32 bits, TrueType "long"
 
@@ -190,14 +194,16 @@ function FontTrueType(name)
 		{
 			var encodingTable = encodingTables[e];
 
-			reader.byteIndexCurrent =
-				readerByteOffsetOriginal
+			var encodingTableOffsetAbsolute =
+				cmapTableOffsetInBytes
 				+ encodingTable.offsetInBytes;
+
+			reader.byteIndexCurrent = encodingTableOffsetAbsolute;
 
 			var formatCode = reader.readShort();
 			if (formatCode == 0)
 			{
-				// "Apple standard"
+				// "Apple standard", "byte encoding table"
 				var lengthInBytes = reader.readShort();
 				var version = reader.readShort();
 				var numberOfMappings = 256;
@@ -216,46 +222,125 @@ function FontTrueType(name)
 			else if (formatCode == 4)
 			{
 				// "Microsoft standard"
-				// Not yet fully implemented.
+				// "segment mapping to delta values"
 
-				console.log("Unsupported cmap format code: " + formatCode);
-				continue;
-
-				var tableLengthInBytes = reader.readShort();
-				var version = reader.readShort();
+				var subtableLengthInBytes = reader.readShort();
+				var language = reader.readShort(); // "Always 0 except for Mac."
 				var segmentCountTimes2 = reader.readShort();
-				var segmentCount = segmentCount / 2;
+				var segmentCount = segmentCountTimes2 / 2;
 				var searchRange = reader.readShort(); // "2 x (2**floor(log2(segCount)))"
 				var entrySelector = reader.readShort(); // "log2(searchRange/2)"
 				var rangeShift = reader.readShort(); // 2 x segCount - searchRange
+
+				var segmentEndCharCodes = [];
 				for (var s = 0; s < segmentCount; s++)
 				{
 					var segmentEndCharCode = reader.readShort();
+					segmentEndCharCodes.push(segmentEndCharCode);
 				}
-				var reservedPad = reader.readShort();
+				if (segmentEndCharCodes[segmentEndCharCodes.length - 1] != 0xFFFF)
+				{
+					throw "Final segment end char code did not have expected value!";
+				}
+
+				var reservedPad = reader.readShort(); // "Set to 0."
+
+				var segmentStartCharCodes = [];
 				for (var s = 0; s < segmentCount; s++)
 				{
 					var segmentStartCharCode = reader.readShort();
+					segmentStartCharCodes.push(segmentStartCharCode);
 				}
-				for (var s = 0; s < segmentCount; s++)
+				if (segmentStartCharCodes[segmentStartCharCodes.length - 1] != 0xFFFF)
 				{
-					var idDeltaForCharCodesInSegment = reader.readShort();
-				}
-				for (var s = 0; s < segmentCount; s++)
-				{
-					var idRangeOffsetForSegment = reader.readShort();
+					throw "Final segment start char code did not have expected value!";
 				}
 
-				while (true)
+				var idDeltasForCharCodesInSegments = [];
+				for (var s = 0; s < segmentCount; s++)
 				{
-					var glyphID = reader.readShort();
-					break; // todo
+					var idDeltaForCharCodesInSegment = reader.readShortSigned();
+					idDeltasForCharCodesInSegments.push(idDeltaForCharCodesInSegment);
 				}
+
+				var addressesOfIdRangeOffsetsForSegment = [];
+				var idRangeOffsetsInBytesForSegments = [];
+				for (var s = 0; s < segmentCount; s++)
+				{
+					var addressOfIdRangeOffsetForSegment = reader.byteIndexCurrent; // This is not ideal.
+					addressesOfIdRangeOffsetsForSegment.push(addressOfIdRangeOffsetForSegment);
+
+					var idRangeOffsetInBytesForSegment = reader.readShort();
+					idRangeOffsetsInBytesForSegments.push(idRangeOffsetInBytesForSegment);
+				}
+
+				var readerByteOffsetOfGlyphIndices = reader.byteIndexCurrent;
+				var charCodeToGlyphIndexLookup = {};
+
+				for (var s = 0; s < segmentCount; s++)
+				{
+					var segmentCharCodeStart = segmentStartCharCodes[s];
+					var segmentCharCodeEnd = segmentEndCharCodes[s];
+					var idDeltaForCharCodesInSegment = idDeltasForCharCodesInSegments[s];
+					var idRangeOffsetInBytes = idRangeOffsetsInBytesForSegments[s];
+					var addressOfIdRangeOffset = addressesOfIdRangeOffsetsForSegment[s];
+
+					var idRangeOffsetInWords = idRangeOffsetInBytes / 2; // Each glyph index is 16 bits.
+
+					var numberOfCharCodesInSegment = segmentCharCodeEnd - segmentCharCodeStart;
+					for (var c = 0; c < numberOfCharCodesInSegment; c++)
+					{
+						var charCode = segmentCharCodeStart + c;
+
+						var glyphIndex;
+						if (idRangeOffsetInWords == 0)
+						{
+							glyphIndex = charCode + idDeltaForCharCodesInSegment;
+						}
+						else
+						{
+							var glyphIndexOffsetAbsolute =
+								idRangeOffsetInWords + c + addressOfIdRangeOffset;
+							reader.byteIndexCurrent = glyphIndexOffsetAbsolute;
+							glyphIndex = reader.readShort();
+						}
+
+						charCodeToGlyphIndexLookup[charCode] = glyphIndex;
+					}
+				}
+
+				encodingTable.charCodeToGlyphIndexLookup = charCodeToGlyphIndexLookup;
+
 			}
 			else if (formatCode == 6)
 			{
-				// "Trimmed table mapping"
-				throw "Unsupported cmap format code: " + formatCode;
+				var formatName = "trimmed table mapping";
+				throw "Unsupported cmap format code: " + formatCode + "(" + formatName + ")";
+			}
+			else if (formatCode == 8)
+			{
+				var formatName = "mixed 16-bit and 32-bit coverage";
+				throw "Unsupported cmap format code: " + formatCode + "(" + formatName + ")";
+			}
+			else if (formatCode == 10)
+			{
+				var formatName = "trimmed array";
+				throw "Unsupported cmap format code: " + formatCode + "(" + formatName + ")";
+			}
+			else if (formatCode == 12)
+			{
+				var formatName = "segmented coverage";
+				throw "Unsupported cmap format code: " + formatCode + "(" + formatName + ")";
+			}
+			else if (formatCode == 13)
+			{
+				var formatName = "many-to-one range mappings";
+				throw "Unsupported cmap format code: " + formatCode + "(" + formatName + ")";
+			}
+			else if (formatCode == 14)
+			{
+				var formatName = "unicode variation sequences";
+				throw "Unsupported cmap format code: " + formatCode + "(" + formatName + ")";
 			}
 			else
 			{
@@ -263,7 +348,7 @@ function FontTrueType(name)
 			}
 		}
 
-		reader.byteIndexCurrent = readerByteOffsetOriginal;
+		reader.byteIndexCurrent = cmapTableOffsetInBytes;
 
 		return encodingTables;
 	};
@@ -281,6 +366,11 @@ function FontTrueType(name)
 		{
 			// header
 			var numberOfContours = reader.readShortSigned();
+			if (numberOfContours == 0)
+			{
+				continue;
+			}
+
 			var min = new Coords
 			(
 				reader.readShortSigned(),
@@ -295,9 +385,11 @@ function FontTrueType(name)
 
 			var glyph;
 			var offsetInBytes = reader.byteIndexCurrent - glyphOffsetBase;
-			if (numberOfContours >= 0)
+			var isGlyphSimpleNotComposite = (numberOfContours >= 0);
+			if (isGlyphSimpleNotComposite)
 			{
-				glyph = new FontTrueTypeGlyph().fromByteStream
+				glyph = new FontTrueTypeGlyph();
+				glyph.fromByteStream
 				(
 					reader,
 					numberOfContours,
@@ -307,14 +399,20 @@ function FontTrueType(name)
 			}
 			else
 			{
-				glyph = new FontTrueTypeGlyphComposite().fromByteStreamAndOffset
+				glyph = new FontTrueTypeGlyphComposite();
+				glyph.fromByteStreamAndOffset
 				(
 					reader,
 					offsetInBytes
 				);
 			}
 
+			// Should we align on 16 or 32 bits?
+			// If 32, impact.ttf fails to parse correctly.
+			// If 16, the intentionally-simple thiscouldbebetter 3x5 font fails.
+			// With no alignment, neither works.
 			reader.align16Bit();
+			//reader.align32Bit();
 
 			glyphs.push(glyph);
 		}
@@ -411,7 +509,7 @@ function FontTrueType(name)
 		var numberOfGlyphs = this.maximumProfile.numberOfGlyphs;
 		var numberOfGlyphsPlusOne = numberOfGlyphs + 1;
 
-		if (isVersionShortRatherThanLong == true)
+		if (isVersionShortRatherThanLong)
 		{
 			for (var i = 0; i < numberOfGlyphsPlusOne; i++)
 			{

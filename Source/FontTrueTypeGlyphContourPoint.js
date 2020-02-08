@@ -1,6 +1,6 @@
 
-function FontTrueTypeGlyphContourPoint(position, isOnCurve)
+function FontTrueTypeGlyphContourPoint(position, isOnContour)
 {
 	this.position = position;
-	this.isOnCurve = isOnCurve;
+	this.isOnContour = isOnContour;
 }
