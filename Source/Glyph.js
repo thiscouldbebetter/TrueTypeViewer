@@ -61,7 +61,7 @@ function Glyph(minAndMax, instructionsAsBytes, offsetInBytes, contours)
 			}
 			else
 			{
-				glyph = GlyphComposite();
+				glyph = new GlyphComposite();
 				glyph.fromByteStreamAndOffset
 				(
 					reader,
@@ -106,7 +106,11 @@ function Glyph(minAndMax, instructionsAsBytes, offsetInBytes, contours)
 			for (var j = 0; j < contourSegments.length; j++)
 			{
 				var contourSegment = contourSegments[j];
-				var points = [ contourSegment.startPoint, contourSegment.curveControlPoint ];
+				var points =
+				[
+					contourSegment.startPoint,
+					contourSegment.curveControlPoint
+				];
 				for (var p = 0; p < points.length; p++)
 				{
 					var point = points[p];
