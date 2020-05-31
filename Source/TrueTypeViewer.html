@@ -2,15 +2,57 @@
 <body>
 
 <div id="divUI">
-	<p><b>TrueType Font Viewer</b></p>
-	<p>Specify a valid .ttf file to view its contents:</p>
+	<h3>TrueType Font Viewer</h3>
+	<p>Specify a valid .ttf file and click the button to view its contents.</p>
+
+	<label>TTF File:</label>
 	<input id="inputFileToLoad" type="file" onchange="inputFileToLoad_Changed();" />
+	<br />
+
+	<label>Font Height in Pixels:</label>
+	<input id="inputFontHeightInPixels" type="number" value="32" />
+	<br />
+
+	<button onclick="buttonDrawGlyphsAll_Clicked();">Draw All Glyphs</button>
+	<br />
+
+	<label>Font Data:</label>
+	<br />
+	<div id="divFont"></div>
+
 	<div id="divOutput"></div>
 </div>
 
 <script type="text/javascript">
 
 // ui event handlers
+
+function buttonDrawGlyphsAll_Clicked()
+{
+	var fontTrueType = Session.Instance.font;
+	if (fontTrueType == null)
+	{
+		alert("No font specified!");
+	}
+	else
+	{
+		var numberOfGlyphs = fontTrueType.maximumProfile.numberOfGlyphs;
+		var inputFontHeightInPixels = document.getElementById("inputFontHeightInPixels");
+		var fontHeightInPixels = parseInt(inputFontHeightInPixels.value);
+		var glyphsPerRow = 20;
+		var glyphRows = Math.ceil(numberOfGlyphs / glyphsPerRow);
+		var displaySize = new Coords(glyphsPerRow, glyphRows).multiplyScalar
+		(
+			fontHeightInPixels
+		);
+		var display = new Display(displaySize);
+		display.initialize();
+		fontTrueType.drawToDisplay(display, fontHeightInPixels);
+		var divOutput = document.getElementById("divOutput");
+		divOutput.innerHTML = "";
+		divOutput.appendChild(display.canvas);
+	}
+}
 
 function inputFileToLoad_Changed(event)
 {
@@ -22,18 +64,13 @@ function inputFileToLoad_Changed(event)
 function inputFileToLoad_Changed_FileLoaded(fileAsBytes)
 {
 	var fontName = "todo";
-	var fontTrueType = new FontTrueType(fontName).fromBytes(fileAsBytes);
-	var numberOfGlyphs = fontTrueType.maximumProfile.numberOfGlyphs;
-	var fontHeightInPixels = 32;
-	var glyphsPerRow = 20;
-	var glyphRows = Math.ceil(numberOfGlyphs / glyphsPerRow);
-	var displaySize = new Coords(glyphsPerRow, glyphRows).multiplyScalar
-	(
-		fontHeightInPixels
-	);
-	var display = new Display(displaySize);
-	display.initialize();
-	fontTrueType.drawToDisplay(display, fontHeightInPixels);
+	var font = new FontTrueType(fontName).fromBytes(fileAsBytes);
+	Session.Instance.font = font;
+
+	var divFont = document.getElementById("divFont");
+	divFont.innerHTML = "";
+	var fontAsDomElement = font.toDomElement();
+	divFont.appendChild(fontAsDomElement);
 }
 
 </script>
@@ -54,6 +91,7 @@ function inputFileToLoad_Changed_FileLoaded(fileAsBytes)
 <script type="text/javascript" src="GlyphContourFlags.js"></script>
 <script type="text/javascript" src="GlyphContourPoint.js"></script>
 <script type="text/javascript" src="GlyphContourSegment.js"></script>
+<script type="text/javascript" src="Session.js"></script>
 <script type="text/javascript" src="TableDefn.js"></script>
 
 </body>

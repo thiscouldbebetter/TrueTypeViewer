@@ -147,7 +147,7 @@ function Glyph(minAndMax, instructionsAsBytes, offsetInBytes, contours)
 				).add
 				(
 					offsetForBaseLines
-				)
+				);
 				endPoint.y = fontHeightInPixels - endPoint.y;
 				endPoint.add
 				(
@@ -166,11 +166,10 @@ function Glyph(minAndMax, instructionsAsBytes, offsetInBytes, contours)
 					).divideScalar
 					(
 						fUnitsPerPixel
-					);
-					curveControlPoint.add
+					).add
 					(
 						offsetForBaseLines
-					)
+					);
 					curveControlPoint.y = fontHeightInPixels - curveControlPoint.y;
 					curveControlPoint.add
 					(
@@ -435,4 +434,21 @@ function Glyph(minAndMax, instructionsAsBytes, offsetInBytes, contours)
 
 		return contourPointSets;
 	};
+
+	// json
+
+	Glyph.prototype.toStringJson = function()
+	{
+		var instructionsAsBytes = this.instructionsAsBytes;
+		delete this.instructionsAsBytes;
+		this.instructionsAsBytes =
+			instructionsAsBytes.map
+			(
+				x => x.toString(16).padStart(2, "0")
+			).join("");
+		var returnValue = JSON.stringify(this, null, 4);
+		this.instructionsAsBytes = instructionsAsBytes;
+		return returnValue;
+	}
+
 }

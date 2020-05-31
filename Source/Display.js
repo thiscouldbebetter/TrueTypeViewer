@@ -7,17 +7,19 @@ function Display(sizeInPixels)
 {
 	Display.prototype.initialize = function()
 	{
-		var canvas = document.createElement("canvas");
-		canvas.width = this.sizeInPixels.x;
-		canvas.height = this.sizeInPixels.y;
-		this.graphics = canvas.getContext("2d");
+		this.canvas = document.createElement("canvas");
+		this.canvas.width = this.sizeInPixels.x;
+		this.canvas.height = this.sizeInPixels.y;
+		this.graphics = this.canvas.getContext("2d");
 		this.graphics.strokeStyle = "Gray";
-		var divOutput = document.getElementById("divOutput");
-		divOutput.innerHTML = "";
-		divOutput.appendChild(canvas);
 	};
 
 	// drawing
+
+	Display.prototype.clear = function()
+	{
+		this.drawRectangle(new Coords(0, 0), this.sizeInPixels, "White");
+	};
 
 	Display.prototype.drawCurve = function(fromPos, curveControlPos, toPos, color)
 	{
@@ -50,8 +52,8 @@ function Display(sizeInPixels)
 	{
 		if (color != null)
 		{
-			this.graphics.strokeStyle = color;
+			this.graphics.fillStyle = color;
 		}
-		this.graphics.strokeRect(pos.x, pos.y, size.x, size.y);
+		this.graphics.fillRect(pos.x, pos.y, size.x, size.y);
 	};
 }

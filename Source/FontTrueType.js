@@ -160,4 +160,115 @@ function FontTrueType(name)
 			}
 		}
 	};
+
+	// dom
+
+	FontTrueType.prototype.toDomElement = function()
+	{
+		var d = document;
+
+		// glyph selected
+
+		var fontHeightInPixels = parseInt(d.getElementById("inputFontHeightInPixels").value);
+		var displaySize = new Coords(1, 1).multiplyScalar(fontHeightInPixels);
+		var displayGlyphSelected = new Display(displaySize);
+		displayGlyphSelected.initialize();
+
+		var labelGlyphAsJson = d.createElement("label");
+		labelGlyphAsJson.innerHTML = "Glyph as JSON:";
+		var textareaGlyphAsJson = d.createElement("textarea");
+		textareaGlyphAsJson.cols = 80;
+		textareaGlyphAsJson.rows = 25;
+
+		// glyph indices
+
+		var glyphs = this.glyphs;
+
+		var labelGlyphIndex = d.createElement("label");
+		labelGlyphIndex.innerHTML = "Glyph Indices:";
+
+		var selectGlyphIndex = d.createElement("select");
+		selectGlyphIndex.size = 4;
+		var font = this;
+		selectGlyphIndex.onchange = (event) => 
+		{
+			var glyphIndex = parseInt(selectGlyphIndex.value);
+			var glyph = glyphs[glyphIndex];
+			displayGlyphSelected.clear();
+			glyph.drawToDisplay
+			(
+				// display, fontHeightInPixels, font, offsetForBaseLines, drawOffset
+				displayGlyphSelected, fontHeightInPixels, font, new Coords(0, 0), new Coords(0, 0)
+			);
+			var glyphAsJson = glyph.toStringJson();
+			textareaGlyphAsJson.value = glyphAsJson;
+		}
+
+		for (var i = 0; i < glyphs.length; i++)
+		{
+			var glyph = glyphs[i];
+			var option = d.createElement("option");
+			option.text = i;
+			option.value = i;
+			selectGlyphIndex.appendChild(option);
+		}
+
+		// cmap
+
+		var charCodeToGlyphIndexLookup = this.encodingTables[0].charCodeToGlyphIndexLookup;
+
+		var labelCharCode = d.createElement("label");
+		labelCharCode.innerHTML = "Character Code to Glyph Index Mappings:";
+
+		var selectCharCode = d.createElement("select");
+		selectCharCode.size = 4;
+		selectCharCode.onchange = (event) =>
+		{
+			var glyphIndex = selectCharCode.value;
+			selectGlyphIndex.value = glyphIndex;
+			selectGlyphIndex.onchange();
+		};
+
+		for (var charCode in charCodeToGlyphIndexLookup)
+		{
+			var glyphIndex = charCodeToGlyphIndexLookup[charCode];
+			var option = d.createElement("option");
+			var charFromCode = String.fromCharCode(charCode);
+			option.text = charFromCode + ":" + glyphIndex;
+			option.value = glyphIndex;
+			selectCharCode.appendChild(option);
+		}
+
+		// glyph selected
+
+		var labelGlyphSelected = d.createElement("label");
+		labelGlyphSelected.innerHTML = "Glyph Selected:";
+
+		// layout
+
+		var returnValue = d.createElement("div");
+
+		returnValue.appendChild(labelCharCode);
+		returnValue.appendChild(d.createElement("br"));
+		returnValue.appendChild(selectCharCode);
+		returnValue.appendChild(d.createElement("br"));
+
+		returnValue.appendChild(labelGlyphIndex);
+		returnValue.appendChild(d.createElement("br"));
+		returnValue.appendChild(selectGlyphIndex);
+		returnValue.appendChild(d.createElement("br"));
+
+		returnValue.appendChild(labelGlyphSelected);
+		returnValue.appendChild(d.createElement("br"));
+		returnValue.appendChild(displayGlyphSelected.canvas);
+		returnValue.appendChild(d.createElement("br"));
+
+		returnValue.appendChild(labelGlyphAsJson);
+		returnValue.appendChild(d.createElement("br"));
+		returnValue.appendChild(textareaGlyphAsJson);
+		returnValue.appendChild(d.createElement("br"));
+
+		return returnValue;
+	};
+
 }

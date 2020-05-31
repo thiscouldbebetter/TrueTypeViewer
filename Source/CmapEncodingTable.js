@@ -163,7 +163,6 @@ function CmapEncodingTable
 				}
 
 				encodingTable.charCodeToGlyphIndexLookup = charCodeToGlyphIndexLookup;
-
 			}
 			else if (formatCode == 6)
 			{
@@ -204,5 +203,35 @@ function CmapEncodingTable
 		reader.byteIndexCurrent = cmapTableOffsetInBytes;
 
 		return encodingTables;
+	};
+
+	// dom
+
+	CmapEncodingTable.prototype.toDomElement = function()
+	{
+		var d = document;
+
+		var select = d.createElement("select");
+		select.size = 4;
+
+		for (var charCode in this.charCodeToGlyphIndexLookup)
+		{
+			var glyphIndex = this.charCodeToGlyphIndexLookup[charCode];
+			var option = d.createElement("option");
+			var charFromCode = String.fromCharCode(charCode);
+			option.text = charFromCode + ":" + glyphIndex;
+			option.value = charCode;
+			select.appendChild(option);
+		}
+
+		var label = d.createElement("label");
+		label.innerHTML = "Character Code to Glyph Index Mappings:";
+
+		var returnValue = d.createElement("div");
+		returnValue.appendChild(label);
+		returnValue.appendChild(d.createElement("br"));
+		returnValue.appendChild(select);
+
+		return returnValue;
 	};
 }
