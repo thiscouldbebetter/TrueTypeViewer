@@ -5,6 +5,10 @@ function Glyph(minAndMax, instructionsAsBytes, offsetInBytes, contours)
 	this.instructionsAsBytes = instructionsAsBytes;
 	this.offsetInBytes = offsetInBytes;
 	this.contours = contours;
+
+	this._startPoint = new Coords();
+	this._curveControlPoint = new Coords();
+	this._endPoint = new Coords();
 }
 
 {
@@ -95,47 +99,13 @@ function Glyph(minAndMax, instructionsAsBytes, offsetInBytes, contours)
 
 	Glyph.prototype.drawToDisplay = function(display, fontHeightInPixels, font, offsetForBaseLines, drawOffset)
 	{
-		var contours = this.contours;
-
 		var fUnitsPerPixel = Glyph.DimensionInFUnits / fontHeightInPixels;
 
-		for (var i = 0; i < contours.length; i++)
-		{
-			var contour = contours[i];
-			var contourSegments = contour.segments;
-			for (var j = 0; j < contourSegments.length; j++)
-			{
-				var contourSegment = contourSegments[j];
-				var points =
-				[
-					contourSegment.startPoint,
-					contourSegment.curveControlPoint
-				];
-				for (var p = 0; p < points.length; p++)
-				{
-					var point = points[p];
-					if (point != null)
-					{
-						point.divideScalar
-						(
-							fUnitsPerPixel
-						).add
-						(
-							offsetForBaseLines
-						);
-						point.y = fontHeightInPixels - point.y;
-					}
-				}
-			}
-		}
+		var startPoint = this._startPoint;
+		var curveControlPoint = this._curveControlPoint;
+		var endPoint = this._endPoint;
 
-		this.drawToDisplay_ContoursDraw(display, contours, drawOffset);
-	};
-
-	Glyph.prototype.drawToDisplay_ContoursDraw = function(display, contours, drawOffset)
-	{
-		// Render the contours of the glyph.
-
+		var contours = this.contours;
 		for (var c = 0; c < contours.length; c++)
 		{
 			var contour = contours[c];
@@ -152,25 +122,64 @@ function Glyph(minAndMax, instructionsAsBytes, offsetInBytes, contours)
 				var segment = contourSegments[s];
 				var segmentNext = contourSegments[sNext];
 
-				var startPoint = segment.startPoint.clone().add(drawOffset);
-				var curveControlPoint = segment.curveControlPoint;
-				var endPoint = segmentNext.startPoint.clone().add(drawOffset);
+				startPoint.overwriteWith
+				(
+					segment.startPoint
+				).divideScalar
+				(
+					fUnitsPerPixel
+				).add
+				(
+					offsetForBaseLines
+				);
+				startPoint.y = fontHeightInPixels - startPoint.y;
+				startPoint.add
+				(
+					drawOffset
+				);
 
-				if (curveControlPoint == null)
+				endPoint.overwriteWith
+				(
+					segmentNext.startPoint
+				).divideScalar
+				(
+					fUnitsPerPixel
+				).add
+				(
+					offsetForBaseLines
+				)
+				endPoint.y = fontHeightInPixels - endPoint.y;
+				endPoint.add
+				(
+					drawOffset
+				);
+
+				if (segment.curveControlPoint == null)
 				{
-					display.drawLine
-					(
-						startPoint,
-						endPoint
-					);
+					display.drawLine(startPoint, endPoint);
 				}
 				else
 				{
+					curveControlPoint.overwriteWith
+					(
+						segment.curveControlPoint
+					).divideScalar
+					(
+						fUnitsPerPixel
+					);
+					curveControlPoint.add
+					(
+						offsetForBaseLines
+					)
+					curveControlPoint.y = fontHeightInPixels - curveControlPoint.y;
+					curveControlPoint.add
+					(
+						drawOffset
+					);
+
 					display.drawCurve
 					(
-						startPoint,
-						curveControlPoint.clone().add(drawOffset),
-						endPoint
+						startPoint, curveControlPoint, endPoint
 					);
 				}
 			}
