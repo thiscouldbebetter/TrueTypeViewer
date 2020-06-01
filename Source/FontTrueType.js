@@ -161,6 +161,103 @@ function FontTrueType(name)
 		}
 	};
 
+	// file - write
+
+	FontTrueType.prototype.toBytes = function()
+	{
+		var writer = new ByteStreamBigEndian([]);
+		this.toBytes_WriteTables(writer);
+		var returnValue = writer.bytes;
+		return returnValue;
+	};
+
+	FontTrueType.prototype.toBytes_WriteTables = function(writer)
+	{
+		// offset table
+
+		var sfntVersionAsBytes = "todo";
+		writer.writeInt(sfntVersionAsBytes);
+		var numberOfTables = "todo";
+		writer.writeShort(numberOfTables);
+		var searchRange = "todo";
+		writer.writeShort(searchRange); // (max power of 2 <= numTables) * 16
+		var entrySelector = "todo";
+		writer.writeShort(entrySelector); // log2(max power of 2 <= numTables)
+		var rangeShift = "todo";
+		writer.writeShort(rangeShift); // numberOfTables * 16 - searchRange
+
+		// table record entries
+
+		for (var t = 0; t < numberOfTables; t++)
+		{
+			var tableTypeTag = "todo";
+			writer.writeString(tableTypeTag); // 4 chars
+			var checkSum = "todo";
+			writer.writeInt(checksum);
+			var offsetInBytes = "todo";
+			writer.writeInt(offsetInBytes);
+			var length = "todo";
+			writer.writeInt(length);
+		}
+
+		var tableNamesOrderedAlphabetically =
+		[
+			"cmap",
+			"glyf",
+			"loca",
+			"head",
+			"maxp"
+		];
+
+		var tableDefns = []; // todo
+
+		for (var t = 0; t < tableNamesOrderedAlphabetically.length; t++)
+		{
+			var tableName = tableNamesOrderedAlphabetically[t];
+			var tableDefn = "todo";
+
+			if (tableName == "cmap")
+			{
+				var table = this.encodingTables;
+				writer.byteIndexCurrent = table.offsetInBytes;
+				var tableAsBytes = table.toBytes();
+				writer.writeBytes(tableAsBytes);
+			}
+			else if (tableTypeTag == "glyf")
+			{
+				var table = this.glyphs;
+				writer.byteIndexCurrent = table.offsetInBytes;
+				var tableAsBytes = table.toBytes();
+				writer.writeBytes(tableAsBytes);
+			}
+			else if (tableTypeTag == "head")
+			{
+				var table = this.headerTable;
+				writer.byteIndexCurrent = table.offsetInBytes;
+				var tableAsBytes = table.toBytes();
+				writer.writeBytes(tableAsBytes);
+			}
+			else if (tableTypeTag == "loca")
+			{
+				var table = this.indexToLocationTable;
+				writer.byteIndexCurrent = table.offsetInBytes;
+				var tableAsBytes = table.toBytes();
+				writer.writeBytes(tableAsBytes);
+			}
+			else if (tableTypeTag == "maxp")
+			{
+				var table = this.maximumProfile;
+				writer.byteIndexCurrent = table.offsetInBytes;
+				var tableAsBytes = table.toBytes();
+				writer.writeBytes(tableAsBytes);
+			}
+			else
+			{
+				console.log("Unexpected table type: " + tableName);
+			}
+		}
+	};
+
 	// dom
 
 	FontTrueType.prototype.toDomElement = function()

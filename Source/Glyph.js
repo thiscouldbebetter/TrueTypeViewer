@@ -435,6 +435,123 @@ function Glyph(minAndMax, instructionsAsBytes, offsetInBytes, contours)
 		return contourPointSets;
 	};
 
+	// file - write
+
+	Glyph.prototype.toBytes = function()
+	{
+		// todo
+
+		var writer = new ByteStream([]);
+
+		for (var c = 0; c < this.contours.length; c++)
+		{
+			var contour = this.contours[c];
+			var endPointOfContour = "todo";
+			writer.writeShort(endPointOfContour);
+		}
+
+		var totalLengthOfInstructionsInBytes = this.instructionsAsBytes.length;
+		writer.writeShort(totalLengthOfInstructionsInBytes);
+		writer.writeBytes(this.instructionsAsBytes);
+
+		for (var c = 0; c < this.contours.length; c++)
+		{
+			var contour = this.contours[c];
+			var contourSegments = contour.segments;
+			for (var s = 0; s < contourSegments.length; s++)
+			{
+				var segment = contourSegments[s];
+				var point = segment.startPoint; // todo
+
+				var flags = "todo";
+				var flagsAsByte = flags.toByte();
+				writer.writeByte(flagsAsByte);
+
+				writer.writeByte(flags.timesToRepeat);
+			}
+		}
+
+		var coordinates = [];
+
+		var xPrev = 0;
+		for (var f = 0; f < flagSets.length; f++)
+		{
+			var flags = flagSets[f];
+			for (var r = 0; r <= flags.timesToRepeat; r++)
+			{
+				var x;
+				if (flags.xIsShortVector)
+				{
+					x = "todo";
+					var sign = (flags.xIsSameOrSignIfShort ? 1 : -1);
+					x *= sign;
+					x -= xPrev;
+					writer.writeByte(x);
+				}
+				else if (flags.xIsSameOrSignIfShort)
+				{
+					x = xPrev;
+				}
+				else
+				{
+					x -= xPrev;
+					x = writer.writeShortSigned();
+				}
+
+				var coordinate = new Coords(x, 0);
+				coordinates.push(coordinate);
+				xPrev = x;
+
+			} // end for r
+
+		} // end for f
+
+		var yPrev = 0;
+		var coordinateIndex = 0;
+		for (var f = 0; f < flagSets.length; f++)
+		{
+			var flags = flagSets[f];
+			for (var r = 0; r <= flags.timesToRepeat; r++)
+			{
+				var coordinate = coordinates[coordinateIndex];
+
+				var y;
+				if (flags.yIsShortVector)
+				{
+					var sign = (flags.yIsSameOrSignIfShort ? 1 : -1);
+					y -= yPrev;
+					y *= sign;
+					reader.writeByte(y);
+				}
+				else if (flags.yIsSameOrSignIfShort)
+				{
+					y = yPrev;
+				}
+				else
+				{
+					y -= yPrev;
+					writer.writeShortSigned(y);
+				}
+
+				coordinate.y = y;
+				yPrev = y;
+
+				coordinateIndex++;
+
+			} // end for r
+
+		} // end for f
+
+		this.contours = this.toBytes_Contours
+		(
+			endPointsOfContours, flagSets, coordinates
+		);
+
+		var returnValue = writer.bytes;
+
+		return returnValue;
+	};
+
 	// json
 
 	Glyph.prototype.toStringJson = function()
