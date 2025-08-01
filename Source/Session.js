@@ -1,6 +1,4 @@
-
-function Session()
-{}
-{
-	Session.Instance = new Session();
+"use strict";
+class Session {
 }
+Session.Instance = new Session();

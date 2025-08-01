@@ -1,0 +1,38 @@
+
+class MaximumProfile
+{
+	numberOfGlyphs: number;
+
+	constructor(numberOfGlyphs: number)
+	{
+		this.numberOfGlyphs = numberOfGlyphs;
+	}
+
+	static fromBytes(reader: ByteStreamBigEndian, length: number): MaximumProfile
+	{
+		// "Maximum Profile"
+
+		var readerByteOffsetOriginal = reader.byteIndexCurrent;
+
+		var version = reader.readInt();
+		console.log("todo - use version: " + version);
+		var numberOfGlyphs = reader.readShort();
+
+		// todo - Many more fields.
+	
+		/*
+		var maxPointsPerGlyphSimple = reader.readShort();
+		var maxContoursPerGlyphSimple = reader.readShort();
+		var maxPointsPerGlyphComposite = reader.readShort();
+		var maxContoursPerGlyphComposite = reader.readShort();
+		*/
+
+
+		reader.byteIndexCurrent = readerByteOffsetOriginal;
+
+		var returnValue = new MaximumProfile(numberOfGlyphs);
+
+		return returnValue;
+	}
+
+}
